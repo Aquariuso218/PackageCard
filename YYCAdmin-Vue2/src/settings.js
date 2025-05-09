@@ -3,7 +3,7 @@ module.exports = {
    * 框架版本号
    */
   version: '3.8.1',
-  title: '云优创后台管理',
+  title: '新兴通用标识卡系统',
   /**
    * 主题颜色
    */

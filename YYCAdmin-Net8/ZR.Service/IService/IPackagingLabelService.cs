@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ZR.Model.Business.Model;
 using ZR.Model.Business.Model.Dto;
+using ZR.Model.Sunset.Model.Dto;
 
 namespace ZR.Service.IService
 {
@@ -17,18 +18,37 @@ namespace ZR.Service.IService
         /// 产品列表
         /// </summary>
         /// <returns></returns>
-        PagedInfo<SimulatedData> getInvList(PagerInfo pager);
-
+        PagedInfo<SimulatedData> getInvList(SimulatedData simulatedData,PagerInfo pager);
 
         /// <summary>
-        /// 产品装箱
+        /// 装箱列表
+        /// </summary>
+        /// <param name="package"></param>
+        /// <param name="pager"></param>
+        /// <returns></returns>
+        PagedInfo<PackageCard> getPCList(PackageCard package, PagerInfo pager);
+
+        /// <summary>
+        /// 普通装箱
         /// </summary>
         /// <param name="simulatedData"></param>
         /// <returns></returns>
-        string createPackage(List<SimulatedData> simulatedData);
+        string createPackage(PackageQuery query);
 
-        PagedInfo<PackageCard> getPCList(PackageCard package, PagerInfo pager);
+        /// <summary>
+        /// 合箱装箱
+        /// </summary>
+        /// <param name="simulatedData"></param>
+        /// <returns></returns>
+        string mergeCreatePackage(PackageQuery query);
 
+        /// <summary>
+        /// 特殊装箱
+        /// </summary>
+        /// <param name="simulatedData"></param>
+        /// <returns></returns>
+        string createSpcPackage(PackageQuery1 query);
+        
 
     }
 }

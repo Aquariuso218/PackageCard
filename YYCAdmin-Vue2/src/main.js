@@ -2,7 +2,7 @@ import Vue from 'vue'
 
 import Cookies from 'js-cookie'
 
-import Element from 'element-ui'
+import Element, { Loading } from 'element-ui'
 import 'normalize.css/normalize.css' // a modern alternative to CSS resets
 import './assets/styles/element-variables.scss'
 import '@/assets/styles/index.scss' // global css
@@ -54,9 +54,23 @@ Vue.prototype.msgError = function (msg) {
   this.$message({ showClose: true, message: msg, type: "error" });
 }
 
+Vue.prototype.msgWarning = function(msg){
+  this.$message({ showClose:true, message: msg, type: "warning"})
+}
+
 Vue.prototype.msgInfo = function (msg) {
   this.$message.info(msg);
 }
+
+Vue.prototype.showLoading = function (text = '加载中...') {
+  const loadingInstance = Loading.service({
+    lock: true,
+    text: text, // 使用传入的 text 参数，默认为 '加载中...'
+    spinner: 'el-icon-loading',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+  return loadingInstance; // 返回实例，以便外部可以调用 close()
+};
 
 // 全局组件挂载
 Vue.component('Pagination', Pagination)

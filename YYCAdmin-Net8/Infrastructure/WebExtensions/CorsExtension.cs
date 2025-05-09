@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 
 namespace Infrastructure
@@ -21,13 +22,19 @@ namespace Infrastructure
             //配置跨域
             services.AddCors(c =>
             {
+                //指定接口策略
                 c.AddPolicy("Policy", policy =>
                 {
                     policy.WithOrigins(corsUrls ?? Array.Empty<string>())
                     .AllowAnyHeader()//允许任意头
                     .AllowCredentials()//允许cookie
                     .AllowAnyMethod();//允许任意方法
+
+                    //policy.AllowAnyOrigin()
+                    //     .AllowAnyHeader()
+                    //     .AllowAnyMethod();
                 });
+
             });
         }
     }

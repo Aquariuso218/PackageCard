@@ -89,6 +89,7 @@ export default {
     getUser() {
       getUserProfile().then((response) => {
         this.user = response.data.user
+        console.log("用户数据:",response.data.user);
         this.roles = response.data.roles
         this.roleGroup = response.data.roleGroup
         this.postGroup = response.data.postGroup

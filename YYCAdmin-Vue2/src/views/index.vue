@@ -4,9 +4,9 @@
     <el-row :gutter="20">
       <el-col :sm="18" :lg="24">
         <blockquote class="text-warning" style="font-size: 14px">
-          <h2>云优创后台管理系统</h2>
-          <p>云优创后台管理系统为企业提供更多定制化开发解决方案。</p>
-        <p>
+          <h2>新兴通用标识卡系统</h2>
+          <!-- <p>诚信为本，卓越为魂，追求卓越，创造价值。</p> -->
+        <!-- <p>
           <b>当前版本:</b> <span>v{{ version }}</span>
         </p>
         <p>
@@ -18,14 +18,14 @@
           </el-button>
         </p>
         <p></p>
-        <h3>⭐ 您的需求，是我们不变的关注点；您的满意，是我们不断追求的目标。⭐</h3>
+        <h3>⭐ 您的需求，是我们不变的关注点；您的满意，是我们不断追求的目标。⭐</h3> -->
         </blockquote>
       </el-col>
     </el-row> 
     <el-divider />
     <el-row :gutter="20" class="mt10">
       <el-col :sm="24" :lg="6">
-        <el-card>
+        <!-- <el-card>
           <div slot="header" class="clearfix">
             <span>联系信息</span>
           </div>
@@ -41,7 +41,7 @@
               <a>023-67877790</a>
             </p>
           </div>
-        </el-card>
+        </el-card> -->
       </el-col>
       <el-col :sm="24" :lg="8">
       </el-col>

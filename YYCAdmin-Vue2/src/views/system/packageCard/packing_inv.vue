@@ -1,72 +1,180 @@
 <template>
   <div class="app-container">
-    <el-row :gutter="20" >
-      <!-- 通过offset将元素移动至相应位置 -->
-      <el-col :lg="4" :sm="24" :offset="20">
+    <el-row :gutter="20" class="mb8">
+      <el-col :lg="18" :sm="24">
+        <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+          <el-form-item label="时间范围">
+            <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange"
+              range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+          </el-form-item>
+          <el-form-item label="产品编码" prop="boxNumber">
+            <el-input v-model="queryParams.invCode" placeholder="请输入产品编码" clearable style="width: 240px"
+              @keyup.enter.native="handleQuery" />
+          </el-form-item>
+          <el-form-item label="产品名称" prop="invName">
+            <el-input v-model="queryParams.invName" placeholder="请输入产品名称" clearable style="width: 240px"
+              @keyup.enter.native="handleQuery" />
+          </el-form-item>
+          <el-form-item label="合箱编码" prop="invCode">
+            <el-input v-model="queryParams.mergeBoxCode" placeholder="请输入合箱编码" clearable style="width: 240px"
+              @keyup.enter.native="handleQuery" />
+          </el-form-item>
+          <el-form-item style="margin-left: 20px;">
+            <el-button size="medium" type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+            <el-button size="medium" icon="el-icon-refresh" @click="reset">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </el-col>
+      <el-col :lg="3" :sm="24">
         <div class="button-borders">
-          <button class="primary-button" @click="create"> 生成标识卡 </button>
+          <button class="primary-button" @click="create" :loading="isCreating"> 普通装箱 </button>
+        </div>
+      </el-col>
+      <el-col :lg="3" :sm="24">
+        <div class="button-borders">
+          <button class="primary-button" @click="mergeCreate" :loading="isMerging"> 合箱装箱 </button>
         </div>
       </el-col>
     </el-row>
 
-    <el-table v-loading="loading" :data="tableData">
-      <el-table-column type="index"></el-table-column>
-      <el-table-column prop="flowCard" label="流转卡"></el-table-column>
-      <el-table-column prop="invCode" label="产品"></el-table-column>
+    <el-table v-loading="_loading" :data="tableData" ref="tableRef" @selection-change="handleSelectionChange">
+      <el-table-column type="selection"></el-table-column>
+      <el-table-column type="index" label="序号"></el-table-column>
+      <el-table-column prop="flowCard" label="流转卡" min-width="120"></el-table-column>
+      <el-table-column prop="id" label="ID"></el-table-column>
+      <el-table-column prop="invCode" label="产品编码"></el-table-column>
+      <el-table-column prop="invName" label="产品名称" min-width="180" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="cInvStd" label="产品规格" min-width="180" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="customerName" label="客户名称" min-width="160"></el-table-column>
+      <el-table-column prop="pictureCode" label="图号" min-width="130"></el-table-column>
       <el-table-column prop="quantity" label="数量"></el-table-column>
+      <el-table-column prop="mergeBoxCode" label="合箱编码"></el-table-column>
+      <el-table-column prop="docDate" label="日期" min-width="140"></el-table-column>
     </el-table>
 
-    <pagination v-show="total > 0" :page-sizes="[50,100,500,1000]" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize"
-      @pagination="getList" />
+    <pagination v-show="total > 0" :page-sizes="[20, 50, 100, 500, 1000]" :total="total"
+      :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
   </div>
 </template>
 
 
 <script>
-import { invList,createPacking } from "@/api/business/packing"
-
+import { invList, createPacking, mergeCreatePacking } from "@/api/business/packing"
+import { getUserProfile } from '@/api/system/user'
 export default {
   name: 'post',
   data() {
     return {
+      userInfo: {},
+
+      isCreating: false, // 控制普通装箱按钮
+      isMerging: false, // 控制合箱装箱按钮
+
       // 遮罩层
-      loading: true,
+      _loading: true,
+      isPacking: false,
+
+      selectedRows: [], // 存储勾选的行数据
+
       //表数据
       tableData: [],
       total: 0,
       queryParams: {
         pageNum: 1,
-        pageSize: 50,
-      }
+        pageSize: 20,
+        invCode: '',
+        invName: '',
+        mergeBoxCode: ''
+      },
+      // 日期范围
+      dateRange: [],
 
     }
   },
   created() {
+    getUserProfile().then((response) => {
+      this.userInfo = response.data.user
+      console.log("用户名:", this.userInfo.nickName);
+    })
     this.getList()
   },
   methods: {
-    getList() {
-      this.loading = true
-      invList(this.queryParams).then(response => {
-        this.tableData = response.data.result
-        this.total = response.data.totalNum
-        this.loading = false
-      })
+    // 处理勾选变化
+    handleSelectionChange(val) {
+      this.selectedRows = val; // 更新勾选的数据
     },
-    create(){
-      createPacking(this.tableData).then(response => {
-        if(response.data = '生成成功'){
-          this.msgSuccess('生成成功')
-        }else{
-          this.msgInfo(response.data)
+    getList() {
+      this._loading = true;
+      invList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+        this.tableData = response.data.result;
+        this.total = response.data.totalNum;
+        this._loading = false;
+
+        if (this.tableData.length === 0) {
+          this.msgWarning('未查询到产品数据')
         }
-      })
+      });
+    },
+    async create() {
+      if (this.isCreating) return; // 防止重复点击
+      this.isCreating = true; // 禁用按钮
+      const loading = this.showLoading('装箱中...');
+      try {
+        const response = await createPacking({
+          simulatedDatas: this.selectedRows,
+          createName: this.userInfo.nickName
+        });
+        if (response.data.includes('成功')) {
+          this.msgSuccess(response.data)
+          this.handleQuery();
+        } else {
+          this.msgWarning(response.data)
+        }
+      } catch (error) {
+        this.msgWarning('网络异常')
+      } finally {
+        this.isCreating = false; // 恢复按钮
+        loading.close();
+      }
+    },
+    async mergeCreate() {
+      if (this.isMerging) return; // 防止重复点击
+      this.isMerging = true; // 禁用按钮
+      const loading = this.showLoading('装箱中...');
+      try {
+        const response = await mergeCreatePacking({
+          simulatedDatas: this.selectedRows,
+          createName: this.userInfo.nickName
+        });
+        if (response.data.includes('成功')) {
+          this.msgSuccess(response.data)
+          this.handleQuery();
+        } else {
+          this.msgWarning(response.data)
+        }
+      } catch (error) {
+        this.msgWarning('网络异常')
+      } finally {
+        this.isMerging = false; // 恢复按钮
+        loading.close();
+      }
     },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.page = 1
       this.getList()
     },
+    checkInvCode() {
+      // 检索数据中的invCode字段，如果存在不同的值则提示警告
+      this.selectedRows
+      this.msgWarning("请选择相同产品装箱!")
+    },
+    reset() {
+      this.dateRange = [];
+      this.queryParams.invCode = '';
+      this.queryParams.invName = '';
+      this.queryParams.mergeBoxCode = '';
+    }
   },
 }
 </script>

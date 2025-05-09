@@ -18,7 +18,7 @@ namespace Infrastructure
             Console.WriteLine("🎉YYCAdmin已经成功启动！");
 
             Console.WriteLine($"Swagger地址：{url}/swagger/index.html");
-            Console.WriteLine($"初始化种子数据地址：{url}/common/InitSeedData");
+            //Console.WriteLine($"初始化种子数据地址：{url}/common/InitSeedData");
         }
     }
 }

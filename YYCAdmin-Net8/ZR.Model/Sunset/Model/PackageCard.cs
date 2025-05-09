@@ -38,7 +38,12 @@ namespace ZR.Model.Business.Model
         public string pictureCode { get; set; }
 
         /// <summary>
-        /// 数量
+        /// 客户名称
+        /// </summary>
+        public string customerName { get; set; }
+
+        /// <summary>
+        /// 已装箱数量
         /// </summary>
         public int quantity { get; set; }
 
@@ -53,6 +58,9 @@ namespace ZR.Model.Business.Model
         /// </summary>
         public string createBy { get; set; }
 
+        /// <summary>
+        /// 创建时间
+        /// </summary>
         public DateTime createdTime {  get; set; }
 
         /// <summary>
@@ -66,8 +74,28 @@ namespace ZR.Model.Business.Model
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)] //插入时忽略
         public string modifiedBy { get; set; }
+        
+        /// <summary>
+        /// 二维码
+        /// </summary>
+        public string barCode { get; set; }
+
+        /// <summary>
+        /// 装箱数量
+        /// </summary>
+        public int boxQty { get; set; }
+
+
 
         #region 表额外字段
+        [SugarColumn(IsIgnore = true)] //映射时忽略
+        public Boolean isZeroBox { get; set; }
+
+        [SugarColumn(IsIgnore = true)] //映射时忽略
+        public DateTime? beginTime { get; set; }
+
+        [SugarColumn(IsIgnore = true)] //映射时忽略
+        public DateTime? endTime { get; set; }
 
         /// <summary>
         /// 明细数据

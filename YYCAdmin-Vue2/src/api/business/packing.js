@@ -9,6 +9,15 @@ export function invList(query) {
   })
 }
 
+// 装箱列表
+export function packingList(query){
+  return request({
+    url: 'v1/packinglable/getPCList',
+    method: 'get',
+    params: query,
+  })
+}
+
 //装箱
 export function createPacking(data){
   return request({
@@ -18,11 +27,23 @@ export function createPacking(data){
   })
 }
 
-// 装箱列表
-export function packingList(query){
+//合并装箱
+export function mergeCreatePacking(data){
   return request({
-    url: 'v1/packinglable/getPCList',
-    method: 'get',
-    params: query,
+    url:'v1/packinglable/mergeCreate',
+    method:'post',
+    data: data,
   })
 }
+
+//特殊装箱
+export function specialCreatePacking(data){
+  return request({
+    url:'v1/packinglable/createSpcPackage',
+    method:'post',
+    data: data,
+  })
+}
+
+
+
