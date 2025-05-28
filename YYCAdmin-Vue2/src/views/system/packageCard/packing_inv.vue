@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-row :gutter="20" class="mb8">
-      <el-col :lg="18" :sm="24">
+      <el-col :lg="24" :sm="3">
         <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
           <el-form-item label="时间范围">
             <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange"
@@ -19,18 +19,29 @@
             <el-input v-model="queryParams.mergeBoxCode" placeholder="请输入合箱编码" clearable style="width: 240px"
               @keyup.enter.native="handleQuery" />
           </el-form-item>
-          <el-form-item style="margin-left: 20px;">
-            <el-button size="medium" type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
-            <el-button size="medium" icon="el-icon-refresh" @click="reset">重置</el-button>
-          </el-form-item>
         </el-form>
       </el-col>
-      <el-col :lg="3" :sm="24">
+    </el-row>
+    <el-row :gutter="20" class="mb8">
+      <el-col :lg="2" :sm="3">
+        <el-button size="medium" type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+      </el-col>
+      <el-col :lg="2" :sm="3">
+        <el-button size="medium" icon="el-icon-refresh" @click="reset">重置</el-button>
+      </el-col>
+      <el-col :lg="3" :offset="11" :sm="3">
+        <div style="display: flex; justify-content: center; align-items: center; margin-top: 15px;">
+          <div style="font-weight: 600;font-size:medium;">零箱装箱|</div>
+          <el-switch v-model="isZero" active-color="#45a247" inactive-color="#ff4949">
+          </el-switch>
+        </div>
+      </el-col>
+      <el-col :lg="3" :sm="4">
         <div class="button-borders">
           <button class="primary-button" @click="create" :loading="isCreating"> 普通装箱 </button>
         </div>
       </el-col>
-      <el-col :lg="3" :sm="24">
+      <el-col :lg="3" :sm="4">
         <div class="button-borders">
           <button class="primary-button" @click="mergeCreate" :loading="isMerging"> 合箱装箱 </button>
         </div>
@@ -74,6 +85,8 @@ export default {
       _loading: true,
       isPacking: false,
 
+      isZero: true,//是否零箱装箱
+
       selectedRows: [], // 存储勾选的行数据
 
       //表数据
@@ -94,7 +107,6 @@ export default {
   created() {
     getUserProfile().then((response) => {
       this.userInfo = response.data.user
-      console.log("用户名:", this.userInfo.nickName);
     })
     this.getList()
   },
@@ -103,17 +115,22 @@ export default {
     handleSelectionChange(val) {
       this.selectedRows = val; // 更新勾选的数据
     },
-    getList() {
+    async getList() {
+      const loading = this.showLoading('查询中...');
       this._loading = true;
-      invList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-        this.tableData = response.data.result;
-        this.total = response.data.totalNum;
-        this._loading = false;
+      try {
+        await invList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+          this.tableData = response.data.result;
+          this.total = response.data.totalNum;
+          this._loading = false;
 
-        if (this.tableData.length === 0) {
-          this.msgWarning('未查询到产品数据')
-        }
-      });
+          if (this.tableData.length === 0) {
+            this.msgWarning('未查询到产品数据')
+          }
+        });
+      } finally {
+        loading.close();
+      }
     },
     async create() {
       if (this.isCreating) return; // 防止重复点击
@@ -121,6 +138,7 @@ export default {
       const loading = this.showLoading('装箱中...');
       try {
         const response = await createPacking({
+          isZero: this.isZero,
           simulatedDatas: this.selectedRows,
           createName: this.userInfo.nickName
         });
@@ -189,10 +207,10 @@ export default {
   font-size: 13px;
   font-weight: bold;
   letter-spacing: 0.05rem;
-  border: 1px solid #F5222D;
+  border: 1px solid #45a247;
   padding: 0.8rem 2.1rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 531.28 200'%3E%3Cdefs%3E%3Cstyle%3E .shape %7B fill: %231890FF; %7D %3C/style%3E%3C/defs%3E%3Cg id='Layer_2' data-name='Layer 2'%3E%3Cg id='Layer_1-2' data-name='Layer 1'%3E%3Cpolygon class='shape' points='415.81 200 0 200 115.47 0 531.28 0 415.81 200' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
-  background-color: #F5222D;
+  background-color: #45a247;
   background-size: 200%;
   background-position: 200%;
   background-repeat: no-repeat;
@@ -211,7 +229,7 @@ export default {
 .primary-button:before {
   content: "";
   position: absolute;
-  background-color: #F5222D;
+  background-color: #45a247;
   width: 0.2rem;
   height: 0.2rem;
   top: -1px;
@@ -251,7 +269,7 @@ export default {
   height: 50%;
   left: -0.3em;
   top: -0.3em;
-  border: 1px solid #F5222D;
+  border: 1px solid #45a247;
   border-bottom: 0px;
   /* opacity: 0.3; */
 }
@@ -263,13 +281,13 @@ export default {
   height: 50%;
   left: -0.3em;
   bottom: -0.3em;
-  border: 1px solid #F5222D;
+  border: 1px solid #45a247;
   border-top: 0px;
   /* opacity: 0.3; */
   z-index: 0;
 }
 
 .shape {
-  fill: #F5222D;
+  fill: #45a247;
 }
 </style>

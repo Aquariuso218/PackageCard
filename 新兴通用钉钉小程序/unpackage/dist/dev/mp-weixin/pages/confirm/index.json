@@ -1,0 +1,15 @@
+{
+  "navigationBarTitleText": "订单确认",
+  "usingComponents": {
+    "uni-segmented-control": "/components/uni-segmented-control/uni-segmented-control",
+    "uni-row": "/components/uni-row/uni-row",
+    "uni-col": "/components/uni-col/uni-col",
+    "u-checkbox-group": "/uview-ui/components/u-checkbox-group/u-checkbox-group",
+    "u-checkbox": "/uview-ui/components/u-checkbox/u-checkbox",
+    "u-button": "/uview-ui/components/u-button/u-button",
+    "u-empty": "/uview-ui/components/u-empty/u-empty",
+    "u-overlay": "/uview-ui/components/u-overlay/u-overlay",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "u--input": "/uview-ui/components/u--input/u--input"
+  }
+}

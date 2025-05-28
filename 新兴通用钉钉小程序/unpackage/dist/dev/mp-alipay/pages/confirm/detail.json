@@ -1,0 +1,9 @@
+{
+  "defaultTitle": "详情",
+  "usingComponents": {
+    "u-empty": "/uview-ui/components/u-empty/u-empty",
+    "uni-row": "/components/uni-row/uni-row",
+    "uni-col": "/components/uni-col/uni-col",
+    "u-overlay": "/uview-ui/components/u-overlay/u-overlay"
+  }
+}

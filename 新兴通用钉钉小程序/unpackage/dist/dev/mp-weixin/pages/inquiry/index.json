@@ -1,0 +1,14 @@
+{
+  "navigationBarTitleText": "订单查询",
+  "usingComponents": {
+    "uni-row": "/components/uni-row/uni-row",
+    "uni-segmented-control": "/components/uni-segmented-control/uni-segmented-control",
+    "uni-col": "/components/uni-col/uni-col",
+    "u--input": "/uview-ui/components/u--input/u--input",
+    "uni-datetime-picker": "/components/uni-datetime-picker/uni-datetime-picker",
+    "u-button": "/uview-ui/components/u-button/u-button",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "u-empty": "/uview-ui/components/u-empty/u-empty",
+    "u-overlay": "/uview-ui/components/u-overlay/u-overlay"
+  }
+}

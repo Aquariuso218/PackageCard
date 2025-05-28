@@ -1,0 +1,109 @@
+
+page {
+	background-color: #fdf7f7;
+}
+.content {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin-top: 30rpx;
+}
+.header {
+	width: 100%;
+	/* 或者你可以根据需要指定宽度 */
+	height: 161rpx;
+	margin-top: 200rpx;
+	display: flex;
+	/* 启用flex布局 */
+	justify-content: center;
+	/* 水平居中对齐 */
+	align-items: center;
+	/* 垂直居中对齐 */
+	/* background-color: aqua; */
+}
+.image1 image {
+	width: 191rpx;
+	height: 191rpx;
+}
+.image2 image {
+	width: 390rpx;
+	height: 170rpx;
+}
+.list {
+	display: flex;
+	flex-direction: column;
+	margin: 40rpx 90rpx 0rpx 90rpx;
+	background-color: #FFFFFF;
+	border-radius: 19px 19px 19px 19px;
+	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+	padding: 10rpx 10rpx;
+}
+.list-title {
+	height: 100rpx;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 19px 19px 0px 0px;
+	background-color: #43C6AC;
+	text-align: center;
+	font-weight: 900;
+	font-size: 30px;
+	color: #FFFFFF;
+}
+.list-call {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	color: #333333;
+	border-bottom: 0.5px solid #e2e2e2;
+	height: 100rpx;
+}
+.list-call .sl-input {
+	flex: 1;
+	text-align: left;
+	font-size: 32rpx;
+	margin-left: 16rpx;
+}
+.button-login {
+	font-weight: 400;
+	font-size: 50rpx;
+	color: #FFFFFF;
+	width: 380rpx;
+	height: 90rpx;
+	/* background: linear-gradient(-90deg, #43C6AC, #87CEEB); */
+	background-color: #43C6AC;
+	border-radius: 50rpx;
+	line-height: 100rpx;
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 20rpx;
+	margin-bottom: 20rpx;
+	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+.button-hover {
+	/* background: linear-gradient(-90deg, rgba(193, 25, 32, 0.8), rgba(238, 38, 38, 0.8)); */
+	background: #11998e;
+}
+.agreenment {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	font-size: 30rpx;
+	margin-top: 80rpx;
+	color: #FFA800;
+	text-align: center;
+	height: 40rpx;
+	line-height: 40rpx;
+}
+.agreenment text {
+	font-size: 24rpx;
+	margin-left: 15rpx;
+	margin-right: 15rpx;
+}
+.input {
+	padding: 30rpx 70rpx;
+}
+

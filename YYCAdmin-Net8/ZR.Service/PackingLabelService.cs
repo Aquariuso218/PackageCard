@@ -42,14 +42,14 @@ namespace ZR.Service
             {
                 var exp = Expressionable.Create<SimulatedData>();
 
-                if (!string.IsNullOrEmpty(simulatedData.cInvcCode))    //判断是否特殊装箱
-                {
-                    exp.And(u => u.cInvcCode == simulatedData.cInvcCode); 
-                }
-                else
-                {
-                    exp.And(u => u.cInvcCode != "1064");
-                }
+                //if (!string.IsNullOrEmpty(simulatedData.cInvcCode))    //判断是否特殊装箱
+                //{
+                //    exp.And(u => u.cInvcCode == simulatedData.cInvcCode);
+                //}
+                //else
+                //{
+                //    exp.And(u => u.cInvcCode != "1064");
+                //}
 
                 exp.AndIF(!string.IsNullOrEmpty(simulatedData.mergeBoxCode), u => u.invName.Contains(simulatedData.mergeBoxCode));
                 exp.AndIF(!string.IsNullOrEmpty(simulatedData.invCode), u => u.invCode.Contains(simulatedData.invCode));
@@ -90,7 +90,8 @@ namespace ZR.Service
 
                 // 查询主表数据（PackageCard）并应用筛选条件
                 var query = db.Queryable<PackageCard>()
-                    .Where(exp.ToExpression());
+                    .Where(exp.ToExpression())
+                    .OrderByDescending(d => d.Id);
 
                 // 获取分页数据
                 var packageCards = query.ToPage(pager);
@@ -101,8 +102,8 @@ namespace ZR.Service
                     // 查询对应的子表数据
                     var packageDetails = db.Queryable<PackageCardDetails>()
                         .Where(d => d.boxNumber == card.boxNumber) // 通过boxNumber与主表关联
-                        .OrderByDescending(d => d.createdTime) // 按createdTime升序排序
-                                                     // 或者使用.OrderByDescending(d => d.createdTime) 按降序排序
+                        .OrderBy(d => d.id) // 按createdTime升序排序
+                                            // 或者使用.OrderByDescending(d => d.id) 按降序排序
                         .ToList();
 
                     // 将查询到的子表数据添加到主表数据中
@@ -118,13 +119,13 @@ namespace ZR.Service
         }
 
         /// <summary>
-        /// 产品装箱
+        /// 普通装箱
         /// </summary>
         /// <returns>信息</returns>
         public string createPackage(PackageQuery query)
         {
             List<SimulatedData> simulatedData = query.simulatedDatas;
-            string createName = query.createName; 
+            string createName = query.createName;
 
             if (simulatedData == null || simulatedData.Count == 0)
             {
@@ -143,8 +144,6 @@ namespace ZR.Service
                     return "您选择的数据已经完成装箱";
                 }
 
-
-
                 //检索simulatedData中是否有多个不同的invCode,存在时return
                 var invCodes = unPackedData
                 .GroupBy(d => d.invCode)
@@ -157,6 +156,8 @@ namespace ZR.Service
                 }
 
                 List<string> MoDIdList = new List<string>();
+
+                int isClosePacking = 0; //是否封箱(0:否; 1:是)
 
                 //按产品编码分组
                 var groupedData = unPackedData.GroupBy(d => d.invCode);
@@ -179,63 +180,86 @@ namespace ZR.Service
                     var flowCards = group.Select(x => new { x.flowCard, x.id, x.MoDId, x.PFId, x.pictureCode, x.quantity }).ToList(); //提取流转卡号和 ID 组成匿名对象列表。
                     int flowCardIndex = 0;//追踪当前处理的流转卡索引
 
-                    //检索未装满的箱子
-                    var lastUnfilledCard = db.Queryable<PackageCard>()
-                        .Where(pc => pc.invCode == invCode && pc.quantity < pc.boxQty)
-                        .OrderBy(pc => pc.createdTime, OrderByType.Desc)
-                        .First();
+                    int remainingQuantity = totalQuantity;  //初始化为总数量，表示剩余待装箱数量
 
-                    //！！检查零箱产品是否都出库？是，不再处理零箱；否，处理零箱
+                    string currentBoxNumber = "";
 
-                    int remainingQuantity = totalQuantity;                     //初始化为总数量，表示剩余待装箱数量
-                    string currentBoxNumber = lastUnfilledCard?.boxNumber;     //获取未装满箱子的箱号
-                    int currentBoxQuantity = lastUnfilledCard?.quantity ?? 0;  //获取当前箱子已装数量
-                    string thisBarCode = lastUnfilledCard?.barCode;                 //获取条码信息
-
-                    //填满未装满的箱子
-                    if (lastUnfilledCard != null)
+                    //用户选择零箱时操作
+                    if (query.isZero)
                     {
-                        int spaceLeft = lastUnfilledCard.boxQty - currentBoxQuantity;
-                        int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
+                        //检索未装满的箱子
+                        List<PackageCard> lastUnfilledCards = db.Queryable<PackageCard>()
+                        .Where(pc => pc.invCode == invCode && pc.isClosePacking == 0 && pc.quantity < pc.boxQty && pc.isClosePacking == 0)
+                        .OrderBy(pc => pc.createdTime, OrderByType.Desc)
+                        .ToList();
 
-                        for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
+                        //填满未装满的箱子
+                        if (lastUnfilledCards != null && lastUnfilledCards.Count > 0)
                         {
-                            //存入订单号供生成领料单使用
-                            if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                            foreach (var lastUnfilledCard in lastUnfilledCards)
                             {
-                                MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                currentBoxNumber = lastUnfilledCard.boxNumber;
+
+                                // 如果全部已发货，此箱子不再处理
+                                if (IsBoxFullyShipped(db, currentBoxNumber))
+                                {
+                                    db.Updateable<PackageCard>()
+                                  .SetColumns(p => new PackageCard { isClosePacking = 1 })
+                                  .Where(p => p.boxNumber == currentBoxNumber)
+                                  .ExecuteCommand();
+                                    continue; // 跳过当前箱子
+                                }
+
+                                int currentBoxQuantity = lastUnfilledCard?.quantity ?? 0;  //获取当前箱子已装数量
+                                string thisBarCode = lastUnfilledCard?.barCode;                 //获取条码信息
+                                int spaceLeft = lastUnfilledCard.boxQty - currentBoxQuantity;
+                                int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
+
+                                for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
+                                {
+                                    //存入订单号供生成领料单使用
+                                    if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                                    {
+                                        MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                    }
+
+                                    thisBarCode += "/" + flowCards[i].id;
+
+                                    var detail = new PackageCardDetails
+                                    {
+                                        invID = flowCards[flowCardIndex].id,
+                                        boxNumber = currentBoxNumber,
+                                        invCode = invCode,
+                                        invName = invName,
+                                        flowCard = flowCards[flowCardIndex].flowCard,
+                                        quantity = flowCards[flowCardIndex].quantity,
+                                        createdBy = createName,
+                                        createdTime = DateTime.Now,
+                                        MoDId = flowCards[flowCardIndex].MoDId,
+                                        PFId = flowCards[flowCardIndex].PFId,
+                                        invAddCode = flowCards[flowCardIndex].pictureCode,
+                                        isFlag = 0
+                                    };
+
+                                    db.Insertable(detail).ExecuteCommand();
+
+                                    flowCardIndex++;
+                                }
+
+                                db.Updateable<PackageCard>()
+                                    .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity, modifiedTime = DateTime.Now, modifiedBy = createName })
+                                    .Where(pc => pc.boxNumber == currentBoxNumber)
+                                    .ExecuteCommand();
+
+                                remainingQuantity -= fillQuantity;
+                                currentBoxQuantity += fillQuantity;
+
                             }
-
-                            thisBarCode += "/" + flowCards[i].id;
-
-                            var detail = new PackageCardDetails
-                            {
-                                invID = flowCards[flowCardIndex].id,
-                                boxNumber = currentBoxNumber,
-                                invCode = invCode,
-                                invName = invName,
-                                flowCard = flowCards[flowCardIndex].flowCard,
-                                quantity = flowCards[flowCardIndex].quantity,
-                                createdBy = createName,
-                                createdTime = DateTime.Now,
-                                MoDId = flowCards[flowCardIndex].MoDId,
-                                PFId = flowCards[flowCardIndex].PFId,
-                                invAddCode = flowCards[flowCardIndex].pictureCode,
-                                isFlag = 0
-                            };
-
-                            db.Insertable(detail).ExecuteCommand();
-
-                            flowCardIndex++;
                         }
-
-                        db.Updateable<PackageCard>()
-                            .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity })
-                            .Where(pc => pc.boxNumber == currentBoxNumber)
-                            .ExecuteCommand();
-
-                        remainingQuantity -= fillQuantity;
-                        currentBoxQuantity += fillQuantity;
+                    }
+                    else
+                    {
+                        isClosePacking = 1; //封箱
                     }
 
                     //处理剩余数量（新箱子）
@@ -293,7 +317,8 @@ namespace ZR.Service
                             createBy = createName,
                             createdTime = DateTime.Now,
                             boxQty = MAX_PER_BOX,
-                            barCode = newBarCode
+                            barCode = newBarCode,
+                            isClosePacking = isClosePacking
                         };
                         db.Insertable(packageCard).ExecuteCommand();
 
@@ -302,7 +327,7 @@ namespace ZR.Service
                 }
                 db.Ado.CommitTran();
 
-                string message =  materialappvouchs(MoDIdList, createName);
+                string message = materialappvouchs(MoDIdList, createName);
 
                 if (message == "1")
                 {
@@ -312,7 +337,8 @@ namespace ZR.Service
                 {
                     return "装箱成功!";
                 }
-                else {
+                else
+                {
                     db.Ado.RollbackTran();
                     return "装箱失败:" + message;
                 }
@@ -380,7 +406,6 @@ namespace ZR.Service
 
                     string sql = "SELECT top 1 cInvDefine12 FROM Inventory (nolock) where cInvCode = '" + invCode + "'";
                     int MAX_PER_BOX = U8db.Ado.GetInt(sql);
-
                     if (MAX_PER_BOX == 0)
                     {
                         return $"产品  {invCode} 未设置装箱数量";
@@ -388,56 +413,71 @@ namespace ZR.Service
 
                     // 步骤1：检查该产品自身的未装满箱子
                     var lastUnfilledCard = db.Queryable<PackageCard>()
-                        .Where(pc => pc.invCode == invCode && pc.quantity < pc.boxQty)
-                        .OrderBy(pc => pc.createdTime, OrderByType.Desc)
-                        .First();
+                        .Where(pc => pc.invCode == invCode && (pc.quantity < pc.boxQty) && pc.isClosePacking == 0)
+                        .OrderBy(pc => pc.createdTime, OrderByType.Desc).ToList();
 
-                    string currentBoxNumber = lastUnfilledCard?.boxNumber;
-                    int currentBoxQuantity = lastUnfilledCard?.quantity ?? 0;
+                    string currentBoxNumber = "";
+                    int currentBoxQuantity = 0;
 
-                    if (lastUnfilledCard != null)
+                    if (lastUnfilledCard.Any())
                     {
-                        int spaceLeft = lastUnfilledCard.boxQty - currentBoxQuantity;
-                        int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
-                        string thisBarCode = lastUnfilledCard?.barCode;
+                        foreach (var card in lastUnfilledCard) {
+                            currentBoxNumber = card.boxNumber;
 
-                        for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
-                        {
-                            //存入订单号供生成领料单使用
-                            if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                            // 如果全部已发货，此箱子不再处理
+                            if (IsBoxFullyShipped(db, currentBoxNumber))
                             {
-                                MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                db.Updateable<PackageCard>()
+                                  .SetColumns(p => new PackageCard { isClosePacking = 1 })
+                                  .Where(p => p.boxNumber == currentBoxNumber)
+                                  .ExecuteCommand();
+
+                                continue; // 跳过当前箱子
                             }
 
-                            thisBarCode += "/" + flowCards[flowCardIndex].id;
+                            currentBoxQuantity = card.quantity;
+                            int spaceLeft = card.boxQty - currentBoxQuantity;
+                            int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
+                            string thisBarCode = card.barCode;
 
-                            var detail = new PackageCardDetails
+                            for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
                             {
-                                invID = flowCards[flowCardIndex].id,
-                                boxNumber = currentBoxNumber,
-                                invCode = invCode,
-                                invName = invName,
-                                flowCard = flowCards[flowCardIndex].flowCard,
-                                quantity = flowCards[flowCardIndex].quantity,
-                                createdBy = createName,
-                                createdTime = DateTime.Now,
-                                MoDId = flowCards[flowCardIndex].MoDId,
-                                PFId = flowCards[flowCardIndex].PFId,
-                                invAddCode = flowCards[flowCardIndex].pictureCode,
-                                isFlag = 0
-                            };
-                            db.Insertable(detail).ExecuteCommand();
+                                //存入订单号供生成领料单使用
+                                if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                                {
+                                    MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                }
 
-                            flowCardIndex++;
+                                thisBarCode += "/" + flowCards[flowCardIndex].id;
+
+                                var detail = new PackageCardDetails
+                                {
+                                    invID = flowCards[flowCardIndex].id,
+                                    boxNumber = currentBoxNumber,
+                                    invCode = invCode,
+                                    invName = invName,
+                                    flowCard = flowCards[flowCardIndex].flowCard,
+                                    quantity = flowCards[flowCardIndex].quantity,
+                                    createdBy = createName,
+                                    createdTime = DateTime.Now,
+                                    MoDId = flowCards[flowCardIndex].MoDId,
+                                    PFId = flowCards[flowCardIndex].PFId,
+                                    invAddCode = flowCards[flowCardIndex].pictureCode,
+                                    isFlag = 0
+                                };
+                                db.Insertable(detail).ExecuteCommand();
+
+                                flowCardIndex++;
+                            }
+
+                            db.Updateable<PackageCard>()
+                                .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity, modifiedTime = DateTime.Now, modifiedBy = createName })
+                                .Where(pc => pc.boxNumber == currentBoxNumber)
+                                .ExecuteCommand();
+
+                            remainingQuantity -= fillQuantity;
+                            currentBoxQuantity = card.boxQty; // 已装满
                         }
-
-                        db.Updateable<PackageCard>()
-                            .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity })
-                            .Where(pc => pc.boxNumber == currentBoxNumber)
-                            .ExecuteCommand();
-
-                        remainingQuantity -= fillQuantity;
-                        currentBoxQuantity = lastUnfilledCard.boxQty; // 已装满
                     }
 
                     // 步骤2：检查合箱码对应的未装满箱子
@@ -445,56 +485,69 @@ namespace ZR.Service
                     {
                         if (remainingQuantity > 0)
                         {
-
                             var mergeUnfilledCard = db.Queryable<PackageCard>()
-                                .Where(pc => pc.invCode == mergeBoxCode && pc.quantity < pc.boxQty)
+                                .Where(pc => pc.invCode == mergeBoxCode && pc.quantity < pc.boxQty && pc.isClosePacking == 0)
                                 .OrderBy(pc => pc.createdTime, OrderByType.Desc)
-                                .First();
+                                .ToList();
 
-                            if (mergeUnfilledCard != null)
+                            if (mergeUnfilledCard.Any())
                             {
-                                currentBoxNumber = mergeUnfilledCard.boxNumber;
-                                currentBoxQuantity = mergeUnfilledCard.quantity;
-                                int spaceLeft = mergeUnfilledCard.boxQty - currentBoxQuantity;
-                                int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
-                                string thisBarCode = mergeUnfilledCard.barCode;
+                                foreach (var card in mergeUnfilledCard) {
+                                    currentBoxNumber = card.boxNumber;
 
-                                for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
-                                {
-                                    //存入订单号供生成领料单使用
-                                    if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                                    // 如果全部已发货，此箱子不再处理
+                                    if (IsBoxFullyShipped(db, currentBoxNumber))
                                     {
-                                        MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                        db.Updateable<PackageCard>()
+                                          .SetColumns(p => new PackageCard { isClosePacking = 1 })
+                                          .Where(p => p.boxNumber == currentBoxNumber)
+                                          .ExecuteCommand();
+
+                                        continue; // 跳过当前箱子
                                     }
 
-                                    thisBarCode += "/" + flowCards[flowCardIndex].id;
+                                    currentBoxQuantity = card.quantity;
+                                    int spaceLeft = card.boxQty - currentBoxQuantity;
+                                    int fillQuantity = Math.Min(spaceLeft, remainingQuantity);
+                                    string thisBarCode = card.barCode;
 
-                                    var detail = new PackageCardDetails
+                                    for (int i = 0; i < fillQuantity && flowCardIndex < flowCards.Count; i++)
                                     {
-                                        invID = flowCards[flowCardIndex].id,
-                                        boxNumber = currentBoxNumber,
-                                        invCode = invCode,
-                                        invName = invName,
-                                        flowCard = flowCards[flowCardIndex].flowCard,
-                                        quantity = flowCards[flowCardIndex].quantity,
-                                        createdBy = createName,
-                                        createdTime = DateTime.Now,
-                                        MoDId = flowCards[flowCardIndex].MoDId,
-                                        PFId = flowCards[flowCardIndex].PFId,
-                                        invAddCode = flowCards[flowCardIndex].pictureCode,
-                                        isFlag = 0
-                                    };
-                                    db.Insertable(detail).ExecuteCommand();
+                                        //存入订单号供生成领料单使用
+                                        if (!MoDIdList.Contains(flowCards[flowCardIndex].MoDId))
+                                        {
+                                            MoDIdList.Add(flowCards[flowCardIndex].MoDId);
+                                        }
 
-                                    flowCardIndex++;
-                                }
+                                        thisBarCode += "/" + flowCards[flowCardIndex].id;
 
-                                db.Updateable<PackageCard>()
-                                    .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity })
-                                    .Where(pc => pc.boxNumber == currentBoxNumber)
-                                    .ExecuteCommand();
+                                        var detail = new PackageCardDetails
+                                        {
+                                            invID = flowCards[flowCardIndex].id,
+                                            boxNumber = currentBoxNumber,
+                                            invCode = invCode,
+                                            invName = invName,
+                                            flowCard = flowCards[flowCardIndex].flowCard,
+                                            quantity = flowCards[flowCardIndex].quantity,
+                                            createdBy = createName,
+                                            createdTime = DateTime.Now,
+                                            MoDId = flowCards[flowCardIndex].MoDId,
+                                            PFId = flowCards[flowCardIndex].PFId,
+                                            invAddCode = flowCards[flowCardIndex].pictureCode,
+                                            isFlag = 0
+                                        };
+                                        db.Insertable(detail).ExecuteCommand();
 
-                                remainingQuantity -= fillQuantity;
+                                        flowCardIndex++;
+                                    }
+
+                                    db.Updateable<PackageCard>()
+                                        .SetColumns(pc => new PackageCard { barCode = thisBarCode, quantity = currentBoxQuantity + fillQuantity, modifiedTime = DateTime.Now, modifiedBy = createName })
+                                        .Where(pc => pc.boxNumber == currentBoxNumber)
+                                        .ExecuteCommand();
+
+                                    remainingQuantity -= fillQuantity;
+                                }  
                             }
                         }
                     }
@@ -776,7 +829,8 @@ namespace ZR.Service
 
                 return $"{currentDate}-{newSerialNumber:D3}";
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 throw new Exception("流水号获取异常:" + ex.Message);
             }
         }
@@ -806,10 +860,11 @@ namespace ZR.Service
                 return ccode;
                 #endregion
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 throw new Exception("单据号获取异常:" + ex.Message);
             }
-            
+
         }
 
         //生成领料申请单
@@ -846,8 +901,8 @@ namespace ZR.Service
                                 SoCode = item["SoCode"].ToString(),
                                 SoSeq = item["SoSeq"].ToString(),
                                 zInvCode = item["zInvCode"].ToString(),
-                                dDueDate= item["StartDemDate"].ToString(),
-                                iopseq= item["OpSeq"].ToString(),
+                                dDueDate = item["StartDemDate"].ToString(),
+                                iopseq = item["OpSeq"].ToString(),
                                 Free1 = item["Free1"].ToString()
                             });
                         }
@@ -893,7 +948,7 @@ namespace ZR.Service
                             appvouchids++;
 
                             //新增领料申请单子表
-                           sqlList.Add(@"insert into materialappvouchs ([AutoID],[ID],[cInvCode],[iNum],[iQuantity],[cBatch],[cFree1],[cFree2],[dDueDate],[cBCloser],[fOutQuantity],[fOutNum],[dVDate],[cDefine22],[cDefine23],[cDefine24],[cDefine25],[cDefine26],[cDefine27],[cItem_class],[cItemCode],[cName],[cItemCName],[cFree3],[cFree4],[cFree5],[cFree6],[cFree7],[cFree8],[cFree9],[cFree10],[cAssUnit],[dMadeDate],[iMassDate],[cDefine28],[cDefine29],[cDefine30],[cDefine31],[cDefine32],[cDefine33],[cDefine34],[cDefine35],[cDefine36],[cDefine37],[cMassUnit],[cWhCode],[iinvexchrate],[iExpiratDateCalcu],[cExpirationdate],[dExpirationdate],[cBatchProperty1],[cBatchProperty2],[cBatchProperty3],[cBatchProperty4],[cBatchProperty5],[cBatchProperty6],[cBatchProperty7],[cBatchProperty8],[cBatchProperty9],[cBatchProperty10],[cbMemo],[irowno],[iMPoIds],[cMoLotCode],[cmworkcentercode],[cmocode],[imoseq],[iopseq],[copdesc],[iOMoDID],[iOMoMID],[comcode],[invcode],[cciqbookcode],[cservicecode],[iordertype],[iorderdid],[iordercode],[iorderseq],[isotype],[isodid],[csocode],[isoseq],[corufts],[crejectcode],[ipesodid],[ipesotype],[cpesocode],[ipesoseq],[cbsysbarcode],[ipickedquantity],[ipickednum],[cSourceMOCode],[iSourceMODetailsid],[cplanlotcode]) values('" + appvouchids + "','" + appvouchid + "','" + itemapp.zInvCode + "',Null," + itemapp.cAppQty + ",Null," + isNull(itemapp.Free1) + ",Null,'" + itemapp.dDueDate + "',Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,0,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,'" + (i + 1) + "','" + itemapp.AllocateId + "',Null,NULL,'" + itemapp.MoCode + "'," + itemapp.SortSeq + ",'" + itemapp.iopseq + "',Null,Null,Null,Null,'" + itemapp.InvCode + "',Null,Null,0,0,Null,Null," + isNull(itemapp.SoType) + "," + isNull(itemapp.SoDId) + "," + isNull(itemapp.SoCode) + "," + isNull(itemapp.SoSeq) + ",convert(nvarchar,convert(money,@@DBTS),2),Null,'" + itemapp.AllocateId + "',7,'" + itemapp.MoCode + "'," + itemapp.SortSeq + ",'||st64|" + appcode + "|" + (i + 1) + "',Null,Null,Null,Null,Null)");
+                            sqlList.Add(@"insert into materialappvouchs ([AutoID],[ID],[cInvCode],[iNum],[iQuantity],[cBatch],[cFree1],[cFree2],[dDueDate],[cBCloser],[fOutQuantity],[fOutNum],[dVDate],[cDefine22],[cDefine23],[cDefine24],[cDefine25],[cDefine26],[cDefine27],[cItem_class],[cItemCode],[cName],[cItemCName],[cFree3],[cFree4],[cFree5],[cFree6],[cFree7],[cFree8],[cFree9],[cFree10],[cAssUnit],[dMadeDate],[iMassDate],[cDefine28],[cDefine29],[cDefine30],[cDefine31],[cDefine32],[cDefine33],[cDefine34],[cDefine35],[cDefine36],[cDefine37],[cMassUnit],[cWhCode],[iinvexchrate],[iExpiratDateCalcu],[cExpirationdate],[dExpirationdate],[cBatchProperty1],[cBatchProperty2],[cBatchProperty3],[cBatchProperty4],[cBatchProperty5],[cBatchProperty6],[cBatchProperty7],[cBatchProperty8],[cBatchProperty9],[cBatchProperty10],[cbMemo],[irowno],[iMPoIds],[cMoLotCode],[cmworkcentercode],[cmocode],[imoseq],[iopseq],[copdesc],[iOMoDID],[iOMoMID],[comcode],[invcode],[cciqbookcode],[cservicecode],[iordertype],[iorderdid],[iordercode],[iorderseq],[isotype],[isodid],[csocode],[isoseq],[corufts],[crejectcode],[ipesodid],[ipesotype],[cpesocode],[ipesoseq],[cbsysbarcode],[ipickedquantity],[ipickednum],[cSourceMOCode],[iSourceMODetailsid],[cplanlotcode]) values('" + appvouchids + "','" + appvouchid + "','" + itemapp.zInvCode + "',Null," + itemapp.cAppQty + ",Null," + isNull(itemapp.Free1) + ",Null,'" + itemapp.dDueDate + "',Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,0,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,'" + (i + 1) + "','" + itemapp.AllocateId + "',Null,NULL,'" + itemapp.MoCode + "'," + itemapp.SortSeq + ",'" + itemapp.iopseq + "',Null,Null,Null,Null,'" + itemapp.InvCode + "',Null,Null,0,0,Null,Null," + isNull(itemapp.SoType) + "," + isNull(itemapp.SoDId) + "," + isNull(itemapp.SoCode) + "," + isNull(itemapp.SoSeq) + ",convert(nvarchar,convert(money,@@DBTS),2),Null,'" + itemapp.AllocateId + "',7,'" + itemapp.MoCode + "'," + itemapp.SortSeq + ",'||st64|" + appcode + "|" + (i + 1) + "',Null,Null,Null,Null,Null)");
 
 
                             //修改申请数量
@@ -920,7 +975,7 @@ namespace ZR.Service
                         return "领料申请失败" + ex.Message;
                     }
                 }
-                else 
+                else
                 {
                     return "2";
                 }
@@ -938,10 +993,28 @@ namespace ZR.Service
             {
                 return "Null";
             }
-            else 
+            else
             {
                 return "'" + value + "'";
             }
+        }
+
+        /// <summary>
+        /// 检查指定箱号中的产品是否全部已发货
+        /// </summary>
+        /// <param name="db">YYCAdmin数据库</param>
+        /// <param name="boxNumber">箱号</param>
+        /// <returns>如果所有产品已发货，返回 true；否则返回 false</returns>
+        private bool IsBoxFullyShipped(dynamic db, string boxNumber)
+        {
+            string U8Code = config.GetSection("U8Configs").GetSection("U8Code").Value;
+            // 查询箱子中是否存在未发货的产品
+            string checkShippedSql = @"SELECT COUNT(*) FROM base_packageCardDetails PCD  WHERE PCD.boxNumber = @boxNumber  AND NOT EXISTS (SELECT 1  FROM [" + U8Code + @"].[dbo].DispatchLists B 
+                INNER JOIN [" + U8Code + @"].[dbo].DispatchList A  ON A.DLID = B.DLID WHERE A.bReturnFlag = '0' AND B.cBatch = PCD.invID AND B.cInvCode = PCD.invCode)";
+
+            int noShippedCount = db.Ado.GetInt(checkShippedSql, new { boxNumber });
+
+            return noShippedCount == 0;
         }
 
     }

@@ -1,0 +1,85 @@
+
+.content.data-v-57280228 {
+	padding: 50rpx;
+}
+
+/* From Uiverse.io by kamehame-ha */
+.cards.data-v-57280228 {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+/* 卡片颜色 */
+.cards .red.data-v-57280228 {
+	background-color: #f43f5e;
+}
+.cards .blue.data-v-57280228 {
+	background-color: #3b82f6;
+}
+.cards .green.data-v-57280228 {
+	background-color: #43C6AC;
+}
+
+/* 卡片基础样式 */
+.cards .card.data-v-57280228 {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	text-align: center;
+	height: 200rpx;
+	width: 100%;
+	border-radius: 10px;
+	color: white;
+	cursor: pointer;
+	transition: 400ms;
+}
+
+/* 卡片文字样式 */
+.cards .card ._p.tip.data-v-57280228 {
+	font-size: 1em;
+	font-weight: 700;
+}
+.cards .card ._p.second-text.data-v-57280228 {
+	font-size: 0.7em;
+}
+
+/* 定义点击动画 */
+@-webkit-keyframes clickAnimation-data-v-57280228 {
+0% {
+		-webkit-transform: scale(1.04);
+		        transform: scale(1.04);
+		background-color: #11998e;
+}
+50% {
+		-webkit-transform: scale(1.04);
+		        transform: scale(1.04);
+}
+100% {
+		-webkit-transform: scale(1.05);
+		        transform: scale(1.05);
+}
+}
+@keyframes clickAnimation-data-v-57280228 {
+0% {
+		-webkit-transform: scale(1.04);
+		        transform: scale(1.04);
+		background-color: #11998e;
+}
+50% {
+		-webkit-transform: scale(1.04);
+		        transform: scale(1.04);
+}
+100% {
+		-webkit-transform: scale(1.05);
+		        transform: scale(1.05);
+}
+}
+
+/* 点击时触发动画 */
+.cards .card.data-v-57280228:active {
+	-webkit-animation: clickAnimation-data-v-57280228 0.2s ease-in-out;
+	        animation: clickAnimation-data-v-57280228 0.2s ease-in-out;
+}
+

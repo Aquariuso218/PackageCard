@@ -1,0 +1,15 @@
+{
+    "version" : "1.0",
+    "configurations" : [
+        {
+            "app-plus" : {
+                "launchtype" : "remote"
+            },
+            "default" : {
+                "launchtype" : "local"
+            },
+            "provider" : "aliyun",
+            "type" : "uniCloud"
+        }
+    ]
+}

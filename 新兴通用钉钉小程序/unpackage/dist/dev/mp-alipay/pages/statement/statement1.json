@@ -1,0 +1,17 @@
+{
+  "defaultTitle": "工序报表",
+  "usingComponents": {
+    "uni-table": "/components/uni-table/uni-table",
+    "uni-tr": "/components/uni-tr/uni-tr",
+    "uni-th": "/components/uni-th/uni-th",
+    "uni-td": "/components/uni-td/uni-td",
+    "u-empty": "/uview-ui/components/u-empty/u-empty",
+    "u-overlay": "/uview-ui/components/u-overlay/u-overlay",
+    "u-button": "/uview-ui/components/u-button/u-button",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "uni-row": "/components/uni-row/uni-row",
+    "uni-col": "/components/uni-col/uni-col",
+    "u-datetime-picker": "/uview-ui/components/u-datetime-picker/u-datetime-picker",
+    "u--input": "/uview-ui/components/u--input/u--input"
+  }
+}

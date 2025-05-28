@@ -1,0 +1,427 @@
+.textView.data-v-198d0de1 {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 35rpx;
+}
+.SXbtn.data-v-198d0de1 {
+  padding: 0rpx 30rpx;
+}
+.topBox.data-v-198d0de1 {
+  margin: 10rpx;
+}
+.wrap.data-v-198d0de1 {
+  padding: 12px;
+}
+.demo-layout.data-v-198d0de1 {
+  height: 40px;
+  border-radius: 4px;
+}
+.bg-purple.data-v-198d0de1 {
+  background: #CED7E1;
+}
+.bg-purple-light.data-v-198d0de1 {
+  background: #e5e9f2;
+}
+.bg-purple-dark.data-v-198d0de1 {
+  background: #99a9bf;
+}
+.uni-col_search.data-v-198d0de1 {
+  height: 60rpx;
+  /* 设置高度 */
+  display: flex;
+  /* 使 view 成为 Flex 容器 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: flex-start;
+  /* 水平靠左，可根据需要调整为 center */
+}
+.custom-col.data-v-198d0de1 {
+  display: flex;
+  /* 确保 uni-col 使用 Flex 布局 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: flex-start;
+  /* 水平方向靠左，也可以根据需要调整 */
+}
+/* 添加悬浮按钮样式 */
+.float-btn.data-v-198d0de1 {
+  position: fixed;
+  bottom: 20%;
+  /* 距离底部距离，避开底部的 sureBtn */
+  right: 5%;
+  /* 距离右侧距离 */
+  z-index: 999;
+  /* 确保按钮在其他内容之上 */
+}
+/* 调整 u-button 的圆形样式（可选，通过 custom-style 已设置） */
+.data-v-198d0de1 .u-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.load-more.data-v-198d0de1 {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+.uni-col-view.data-v-198d0de1 {
+  font-size: 26rpx;
+  height: 60rpx;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+}
+._container.data-v-198d0de1 {
+  margin-top: 10rpx;
+  height: 65vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  padding: 15rpx;
+}
+.search-header.data-v-198d0de1 {
+  width: 90%;
+  padding: 10rpx 0;
+  background: #fff;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 20;
+  z-index: 10;
+}
+.search-box.data-v-198d0de1 {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 0 10rpx;
+}
+.search-input.data-v-198d0de1 {
+  flex: 1;
+  font-size: 28rpx;
+}
+.action-btn.data-v-198d0de1 {
+  width: 120rpx;
+  font-size: 24rpx;
+}
+.result-list.data-v-198d0de1 {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-top: 15rpx;
+}
+.result-row.data-v-198d0de1 {
+  display: flex;
+  flex-wrap: wrap;
+  /* 允许换行 */
+  gap: 10rpx;
+  /* 设定项目之间的间距 */
+}
+.result-item.data-v-198d0de1 {
+  flex: 0 0 32%;
+  /* 每行显示三个，且每个项占 32% 的宽度 */
+  padding: 10rpx;
+  background: #fff;
+  margin: 8rpx 0;
+  border-radius: 8rpx;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 40rpx;
+  cursor: pointer;
+  text-align: center;
+}
+.result-item.selected.data-v-198d0de1 {
+  background: #007BFF !important;
+  /* 确保覆盖默认背景色 */
+  color: #fff;
+}
+.no-data.data-v-198d0de1 {
+  text-align: center;
+  margin-top: 15rpx;
+  color: #aaa;
+  font-size: 26rpx;
+}
+/* From Uiverse.io by akshat-patel28 */
+.loader.data-v-198d0de1 {
+  position: relative;
+  overflow: hidden;
+  border-right: 3px solid;
+  width: 0px;
+  -webkit-animation: typewriter-data-v-198d0de1 2s steps(10) infinite alternate,blink-data-v-198d0de1 0.5s steps(10) infinite;
+          animation: typewriter-data-v-198d0de1 2s steps(10) infinite alternate,blink-data-v-198d0de1 0.5s steps(10) infinite;
+}
+.loader-text.data-v-198d0de1 {
+  font-size: 40px;
+  font-weight: 700;
+  background: linear-gradient(to right, #cb2d3e, #ef473a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@-webkit-keyframes typewriter-data-v-198d0de1 {
+0% {
+    width: 0px;
+}
+100% {
+    width: 240px;
+}
+}
+@keyframes typewriter-data-v-198d0de1 {
+0% {
+    width: 0px;
+}
+100% {
+    width: 240px;
+}
+}
+@-webkit-keyframes blink-data-v-198d0de1 {
+0% {
+    border-right-color: rgba(255, 255, 255, 0.75);
+}
+100% {
+    border-right-color: transparent;
+}
+}
+@keyframes blink-data-v-198d0de1 {
+0% {
+    border-right-color: rgba(255, 255, 255, 0.75);
+}
+100% {
+    border-right-color: transparent;
+}
+}
+.empty.data-v-198d0de1 {
+  width: 100%;
+  min-height: 1100rpx;
+  display: flex;
+  /* 启用flex布局 */
+  justify-content: center;
+  /* 水平居中对齐 */
+  align-items: center;
+}
+._content.data-v-198d0de1 {
+  font-size: medium;
+  background-color: #f5f4f4;
+}
+.card.data-v-198d0de1 {
+  margin-bottom: 30rpx;
+  padding: 5rpx 30rpx;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+}
+.card-gray.data-v-198d0de1 {
+  background-color: #D3D3D3;
+  /* 灰色背景，用于 isFlag 为 1 的情况 */
+}
+.card.selected.data-v-198d0de1 {
+  background-color: #007BFF !important;
+  color: #FFFFFF !important;
+}
+.card.selected .textStyle.data-v-198d0de1 {
+  color: #FFFFFF !important;
+}
+.card.selected .uni-col.data-v-198d0de1 {
+  color: #FFFFFF !important;
+}
+.firstrow.data-v-198d0de1 {
+  height: 70rpx;
+  padding-top: 10rpx;
+  border-bottom: 2rpx solid rgba(0, 0, 0, 0.3);
+}
+.uni-col.data-v-198d0de1 {
+  height: 50rpx;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+}
+.example-body.data-v-198d0de1 {
+  display: block;
+  padding: 5rpx 10rpx 0;
+  overflow: hidden;
+}
+.textStyle.data-v-198d0de1 {
+  font-weight: 1000;
+  color: #43C6AC;
+}
+.textRight.data-v-198d0de1 {
+  display: flex;
+  justify-content: flex-end;
+}
+.divRight.data-v-198d0de1 {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+}
+.number.data-v-198d0de1 {
+  margin-left: 3rpx;
+  font-size: medium;
+  font-weight: 1000;
+}
+.select.data-v-198d0de1 {
+  padding-top: 10rpx;
+  padding-left: 30rpx;
+  display: flex;
+  bottom: 0;
+}
+.sureBtn.data-v-198d0de1 {
+  width: 100%;
+  height: 110rpx;
+  padding: 20rpx 30rpx 20rpx 30rpx;
+  /* 假设这是小程序中的单位 */
+  position: fixed;
+  /* 使按钮固定在视口 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  left: 50%;
+  /* 将按钮的左边缘定位到屏幕宽度的 50% */
+  -webkit-transform: translateX(-50%);
+          transform: translateX(-50%);
+  /* 水平居中 */
+  bottom: 0;
+  /* 距离屏幕底部 20px */
+  z-index: 200;
+  /* 确保它位于其他内容之上 */
+  background-color: #fdf7f7;
+  /* 按钮背景颜色 */
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #FFFFFF;
+  /* 按钮文字颜色 */
+  border-radius: 0.5rem;
+  /* 圆角边框 */
+}
+.button-hover.data-v-198d0de1 {
+  background: #11998e;
+}
+.warp.data-v-198d0de1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.rect.data-v-198d0de1 {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  /* 启用flex布局 */
+  justify-content: center;
+  /* 水平居中对齐 */
+  align-items: center;
+}
+/* From Uiverse.io by abrahamcalsin */
+.dot-spinner.data-v-198d0de1 {
+  --uib-size: 2.8rem;
+  --uib-speed: 0.9s;
+  --uib-color: #43C6AC;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: var(--uib-size);
+  width: var(--uib-size);
+}
+.dot-spinner__dot.data-v-198d0de1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
+  width: 100%;
+}
+.dot-spinner__dot.data-v-198d0de1::before {
+  content: '';
+  height: 20%;
+  width: 20%;
+  border-radius: 50%;
+  background-color: var(--uib-color);
+  -webkit-transform: scale(0);
+          transform: scale(0);
+  opacity: 0.5;
+  -webkit-animation: pulse0112-data-v-198d0de1 calc(var(--uib-speed) * 1.111) ease-in-out infinite;
+          animation: pulse0112-data-v-198d0de1 calc(var(--uib-speed) * 1.111) ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(18, 31, 53, 0.3);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(2) {
+  -webkit-transform: rotate(45deg);
+          transform: rotate(45deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(2)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.875);
+          animation-delay: calc(var(--uib-speed) * -0.875);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(3) {
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(3)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.75);
+          animation-delay: calc(var(--uib-speed) * -0.75);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(4) {
+  -webkit-transform: rotate(135deg);
+          transform: rotate(135deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(4)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.625);
+          animation-delay: calc(var(--uib-speed) * -0.625);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(5) {
+  -webkit-transform: rotate(180deg);
+          transform: rotate(180deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(5)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.5);
+          animation-delay: calc(var(--uib-speed) * -0.5);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(6) {
+  -webkit-transform: rotate(225deg);
+          transform: rotate(225deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(6)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.375);
+          animation-delay: calc(var(--uib-speed) * -0.375);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(7) {
+  -webkit-transform: rotate(270deg);
+          transform: rotate(270deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(7)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.25);
+          animation-delay: calc(var(--uib-speed) * -0.25);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(8) {
+  -webkit-transform: rotate(315deg);
+          transform: rotate(315deg);
+}
+.dot-spinner__dot.data-v-198d0de1:nth-child(8)::before {
+  -webkit-animation-delay: calc(var(--uib-speed) * -0.125);
+          animation-delay: calc(var(--uib-speed) * -0.125);
+}
+@-webkit-keyframes pulse0112-data-v-198d0de1 {
+0%,
+  100% {
+    -webkit-transform: scale(0);
+            transform: scale(0);
+    opacity: 0.5;
+}
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+    opacity: 1;
+}
+}
+@keyframes pulse0112-data-v-198d0de1 {
+0%,
+  100% {
+    -webkit-transform: scale(0);
+            transform: scale(0);
+    opacity: 0.5;
+}
+50% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+    opacity: 1;
+}
+}
+

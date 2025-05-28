@@ -1,0 +1,30 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/me/index",
+    "pages/confirm/index",
+    "pages/confirm/detail",
+    "pages/confirm/gxww_details",
+    "pages/inquiry/index",
+    "pages/statement/index",
+    "pages/statement/statement1",
+    "pages/statement/statement2",
+    "pages/statement/test"
+  ],
+  "subPackages": [
+    {
+      "root": "pages/public",
+      "pages": [
+        "404"
+      ]
+    }
+  ],
+  "window": {
+    "defaultTitle": "新兴移动端",
+    "titleBarColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "usingComponents": {
+    "plugin-wrapper": "/plugin-wrapper"
+  }
+}

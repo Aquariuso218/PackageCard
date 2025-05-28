@@ -64,13 +64,13 @@ namespace ZR.Model.Business.Model
         public DateTime createdTime {  get; set; }
 
         /// <summary>
-        /// 修改人
+        /// 修改时间 
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)] //插入时忽略
         public DateTime modifiedTime { get; set; }
 
         /// <summary>
-        /// 修改时间
+        /// 修改人
         /// </summary>
         [SugarColumn(IsOnlyIgnoreInsert = true)] //插入时忽略
         public string modifiedBy { get; set; }
@@ -84,6 +84,16 @@ namespace ZR.Model.Business.Model
         /// 装箱数量
         /// </summary>
         public int boxQty { get; set; }
+
+       /// <summary>
+       /// 封箱标识 
+       /// </summary>
+        public int isClosePacking { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        //public string remark {  get; set; }
 
 
 

@@ -1,0 +1,15 @@
+{
+  "defaultTitle": "销售发货",
+  "usingComponents": {
+    "uni-row": "/components/uni-row/uni-row",
+    "uni-col": "/components/uni-col/uni-col",
+    "u-empty": "/uview-ui/components/u-empty/u-empty",
+    "u-button": "/uview-ui/components/u-button/u-button",
+    "u-overlay": "/uview-ui/components/u-overlay/u-overlay",
+    "u-popup": "/uview-ui/components/u-popup/u-popup",
+    "u-row": "/uview-ui/components/u-row/u-row",
+    "u-col": "/uview-ui/components/u-col/u-col",
+    "uni-datetime-picker": "/components/uni-datetime-picker/uni-datetime-picker",
+    "u--input": "/uview-ui/components/u--input/u--input"
+  }
+}

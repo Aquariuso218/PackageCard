@@ -21,7 +21,7 @@
                             @keyup.enter.native="handleQuery" />
                     </el-form-item>
                     <el-form-item label="零箱" prop="invCode">
-                        <el-switch v-model="queryParams.isZeroBox" active-color="#13ce66" inactive-color="#ff4949">
+                        <el-switch v-model="queryParams.isZeroBox" active-color="#45a247" inactive-color="#ff4949">
                         </el-switch>
                     </el-form-item>
                     <el-form-item style="margin-left: 20px;">
@@ -37,18 +37,30 @@
                 </div>
             </el-col>
         </el-row>
-        <el-table v-loading="_loading" :data="tableData" stripe @selection-change="handleSelectionChange">
+        <el-table v-loading="_loading" :data="tableData" @selection-change="handleSelectionChange"
+            :row-class-name="tableRowClassName" :default-sort="{ prop: 'id', order: 'descending' }">
             <el-table-column type="selection"></el-table-column>
             <el-table-column type="index" label="序号"></el-table-column>
-            <el-table-column prop="boxNumber" label="箱号" min-width="100"></el-table-column>
+            <el-table-column prop="boxNumber" label="箱号" sortable min-width="100"></el-table-column>
             <el-table-column prop="invCode" label="产品编码" min-width="90"></el-table-column>
             <el-table-column prop="invName" label="产品名称" min-width="180" show-overflow-tooltip></el-table-column>
-            <el-table-column prop="pictureCode" label="图号" min-width="130"></el-table-column>
+            <el-table-column prop="pictureCode" label="图号" min-width="140"></el-table-column>
             <el-table-column prop="boxQty" label="装箱数量"></el-table-column>
             <el-table-column prop="quantity" label="已装数量"></el-table-column>
             <el-table-column prop="customerName" label="客户名称" min-width="190"></el-table-column>
-            <el-table-column prop="createdTime" label="创建时间" min-width="140"></el-table-column>
+            <el-table-column prop="createdTime" label="创建时间" sortable min-width="140"></el-table-column>
             <el-table-column prop="createBy" label="装箱人"></el-table-column>
+            <el-table-column prop="isClosePacking" label="封箱">
+                <template #default="scope">
+                    {{ scope.row.isClosePacking === 1 ? '是' : '否' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="modifiedBy" label="修改人"></el-table-column>
+            <el-table-column prop="modifiedTime" label="修改时间" sortable min-width="140">
+                <template #default="scope">
+                    {{ scope.row.modifiedTime === '0001-01-01 00:00:00' ? '' : scope.row.modifiedTime }}
+                </template>
+            </el-table-column>
             <el-table-column label="操作" align="center" fixed="right" min-width="200">
                 <template slot-scope="scope">
                     <el-button size="medium" @click="preview(scope.row)">预览</el-button>
@@ -64,7 +76,7 @@
             <div>
                 <el-table v-loading="_loading" :data="details" stripe>
                     <el-table-column type="index" label="序号"></el-table-column>
-                    <el-table-column prop="invID" label="产品ID"></el-table-column>
+                    <el-table-column prop="invID" label="产品ID" min-width="130"></el-table-column>
                     <el-table-column prop="flowCard" label="流转卡号" min-width="130"></el-table-column>
                     <el-table-column prop="invCode" label="产品编码" min-width="90"></el-table-column>
                     <el-table-column prop="invName" label="产品名称" min-width="180"></el-table-column>
@@ -116,7 +128,7 @@
                         </tr>
                         <tr>
                             <td>产品ID号<br>Part Serial No.</td>
-                            <td colspan="3" class="part-serial-no">{{ labelData.partSerialNo }}</td>
+                            <td colspan="3">{{ labelData.partSerialNo }}</td>
                         </tr>
                         <tr>
                             <td class="qr-code" rowspan="2" colspan="2">
@@ -182,6 +194,26 @@ export default {
         this.getList();
     },
     methods: {
+        tableRowClassName({ row, rowIndex }) {
+            if (rowIndex == 1) {
+                console.log(row)
+            }
+
+            var stockNum = 0;
+
+            row.details.forEach(item => {
+                if (item.isFlag == 1) {
+                    stockNum++;
+                }
+            });
+
+            if (stockNum == row.quantity) {
+                return 'success-row';
+            } else {
+                return '';
+            }
+        },
+
         // 处理勾选变化
         handleSelectionChange(val) {
             this.selectedRows = val; // 更新勾选的数据
@@ -192,6 +224,10 @@ export default {
                 this.$message.warning('请先选择要打印的标识卡');
                 return;
             }
+
+            // 测试使用
+            // console.log(JSON.stringify(this.selectedRows));
+            // return;
 
             // 等待所有行的二维码生成完成
             const printContents = await Promise.all(this.selectedRows.map(async row => {
@@ -204,7 +240,6 @@ export default {
                     quantity: row.quantity || '',
                     packingNo: row.boxNumber || '',
                     partSerialNo: row.details ? row.details.map(detail => detail.invID).join('/') : '',
-                    // partSerialNo: '250331007/250331006/250331008/250331009/250331012/250331007/250331006/250331008/250331009//250331008/250331009//250331008/250331009//250331008/250331009/',
                     packingDate: row.createdTime ? row.createdTime.split('T')[0] : '',
                 };
 
@@ -395,7 +430,7 @@ export default {
             this.labelData.quantity = row.quantity;
             this.labelData.packingNo = row.boxNumber;
             // 将拼接后的字符串赋值给 labelData.partSerialNo
-            this.labelData.partSerialNo = row.details.map(detail => detail.invID).join('/');
+            this.labelData.partSerialNo = row.details ? row.details.map(detail => detail.invID).join(' ') : '';
             //截取年月日
             this.labelData.packingDate = row.createdTime.split('T')[0];
             //生成二维码
@@ -411,18 +446,23 @@ export default {
             this.isPreview = true;
         },
         /** 获取列表 */
-        getList() {
+        async getList() {
+            const loading = this.showLoading('查询中...');
             this._loading = true
-            packingList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
-                console.log(JSON.stringify(response.data.result));
-                this.tableData = response.data.result
-                this.total = response.data.totalNum
-                this._loading = false
+            try {
+                await packingList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
+                    this.tableData = response.data.result
+                    this.total = response.data.totalNum
+                    this._loading = false
 
-                if (this.tableData.length === 0) {
-                    this.msgWarning('未查询到装箱标识卡数据')
-                }
-            })
+                    if (this.tableData.length === 0) {
+                        this.msgWarning('未查询到装箱标识卡数据')
+                    }
+                })
+            } finally {
+                loading.close();
+            }
+
         },
         /** 搜索按钮操作 */
         handleQuery() {
@@ -447,6 +487,13 @@ export default {
 }
 </script>
 
+<style>
+.el-table .success-row {
+    background: rgb(226, 255, 238);
+}
+</style>
+
+
 <style scoped>
 /* From Uiverse.io by faizanullah1999 */
 .primary-button {
@@ -457,10 +504,10 @@ export default {
     font-size: 13px;
     font-weight: bold;
     letter-spacing: 0.05rem;
-    border: 1px solid #F5222D;
+    border: 1px solid #45a247;
     padding: 0.8rem 2.1rem;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 531.28 200'%3E%3Cdefs%3E%3Cstyle%3E .shape %7B fill: %231890FF; %7D %3C/style%3E%3C/defs%3E%3Cg id='Layer_2' data-name='Layer 2'%3E%3Cg id='Layer_1-2' data-name='Layer 1'%3E%3Cpolygon class='shape' points='415.81 200 0 200 115.47 0 531.28 0 415.81 200' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E%0A");
-    background-color: #F5222D;
+    background-color: #45a247;
     background-size: 200%;
     background-position: 200%;
     background-repeat: no-repeat;
@@ -479,7 +526,7 @@ export default {
 .primary-button:before {
     content: "";
     position: absolute;
-    background-color: #F5222D;
+    background-color: #45a247;
     width: 0.2rem;
     height: 0.2rem;
     top: -1px;
@@ -519,7 +566,7 @@ export default {
     height: 50%;
     left: -0.3em;
     top: -0.3em;
-    border: 1px solid #F5222D;
+    border: 1px solid #45a247;
     border-bottom: 0px;
     /* opacity: 0.3; */
 }
@@ -531,14 +578,14 @@ export default {
     height: 50%;
     left: -0.3em;
     bottom: -0.3em;
-    border: 1px solid #F5222D;
+    border: 1px solid #45a247;
     border-top: 0px;
     /* opacity: 0.3; */
     z-index: 0;
 }
 
 .shape {
-    fill: #F5222D;
+    fill: #45a247;
 }
 </style>
 

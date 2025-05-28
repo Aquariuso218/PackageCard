@@ -1,0 +1,7 @@
+{
+  "defaultTitle": "我的",
+  "usingComponents": {
+    "u-button": "/uview-ui/components/u-button/u-button",
+    "wk-wxlogin": "/components/wk-wxlogin/wk-wxlogin"
+  }
+}

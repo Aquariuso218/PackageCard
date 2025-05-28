@@ -1,0 +1,9 @@
+{
+  "modes": [
+    {
+      "title": "首页",
+      "page": "pages/index/index",
+      "pageQuery": ""
+    }
+  ]
+}
