@@ -51,7 +51,7 @@ module.exports = {
     proxy: {
       // detail: https://cli.vuejs.org/config/#devserver-proxy
       [process.env.VUE_APP_BASE_API]: {
-        target: 'http://ecs.xinxing999.com:1888', // 后端接口地址
+        target: 'http://localhost:1888', // 后端接口地址
         changeOrigin: true,
         pathRewrite: {
           ['^' + process.env.VUE_APP_BASE_API]: '' //需要rewrite的

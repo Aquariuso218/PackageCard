@@ -80,6 +80,10 @@ namespace ZR.Model.Sunset.Model.Dto
         /// </summary>
         public string reportTime { get; set; }
 
+        /// <summary>
+        /// 形态转换标识
+        /// </summary>
+        public int isChange { get; set; }
 
     }
 }

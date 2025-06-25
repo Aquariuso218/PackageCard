@@ -82,6 +82,11 @@ namespace ZR.Model.Business.Model
         /// </summary>
         public int isFlag { get; set; }
 
+        /// <summary>
+        /// 形态转换标识
+        /// </summary>
+        public int isChange { get; set; }
+
 
         public string RDCode { get; set; }
 

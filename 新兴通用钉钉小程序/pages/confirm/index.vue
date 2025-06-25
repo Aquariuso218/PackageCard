@@ -18,7 +18,7 @@
 				@click="toggleCancel(item.id)">
 				<uni-row class="uni-row">
 					<uni-col :span="8">
-						<view class="uni-col textStyle">{{ item.invCode }}</view>
+					  <view class="uni-col textStyle" :style="{ 'background-color': item.isChange === 1 ? '#FF4B2B' : '' }">{{ item.invCode }}</view>
 					</uni-col>
 					<uni-col :span="16" class="textRight">
 						<view class="uni-col">{{ item.invName }}</view>
@@ -263,6 +263,7 @@
 					const res = await getStockInList(params);
 					if (res.code == 1) {
 						this.listData = res.data;
+						console.log(this.listData);
 						// 重新匹配选中状态
 						this.matchAndSelect();
 					} else {
@@ -360,6 +361,7 @@
 							title: '产品入库成功！',
 							icon: 'success'
 						});
+						this.listData = [];
 						this.toStockInList(this.params); // 重新查询列表
 						this.selectedIDs = [];
 					} else {
@@ -451,6 +453,10 @@
 
 
 <style lang="less" scoped>
+	/deep/ .bg-red {
+	  background-color: #FF4B2B !important; /* 行背景色 */
+	}
+
 	.textView {
 		display: flex;
 		justify-content: flex-end;

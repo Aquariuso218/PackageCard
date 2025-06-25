@@ -124,7 +124,8 @@ namespace ZR.Service
                         isFlag = Convert.ToInt32(row["isFlag"]),
                         reportTime = row["DocDate"]?.ToString(),
                         PFId = row["PFId"]?.ToString(),
-                        MoDId = row["MoDId"]?.ToString()
+                        MoDId = row["MoDId"]?.ToString(),
+                        isChange = Convert.ToInt32(row["isChange"])
                     });
                 }
             }
@@ -336,13 +337,13 @@ namespace ZR.Service
                             }
                             #endregion
 
-                            //校验是否领料完成
-                            string str1 = "select COUNT(1) from mom_moallocate (nolock) where IssQty<Qty and MoDId='" + rdrecord10.MoDId + "'";
-                            int thuum = (int)U8db.Ado.GetDecimal(str1);
-                            if (thuum > 0)
-                            {
-                                return new ApiResult(-1, $"{rdrecord10.flowCard} 领料未完成，不允许入库!");
-                            }
+                            ////校验是否领料完成
+                            //string str1 = "select COUNT(1) from mom_moallocate (nolock) where IssQty<Qty and MoDId='" + rdrecord10.MoDId + "'";
+                            //int thuum = (int)U8db.Ado.GetDecimal(str1);
+                            //if (thuum > 0)
+                            //{
+                            //    return new ApiResult(-1, $"{rdrecord10.flowCard} 领料未完成，不允许入库!");
+                            //}
 
                             rdrecords10 rds10 = new rdrecords10();
 
@@ -426,7 +427,7 @@ namespace ZR.Service
                                 decimal BalQualifiedQty = U8db.Ado.GetDecimal(strcc);
                                 if (BalQualifiedQty < item.quantity)
                                 {
-                                    return new ApiResult(-1, $"{item.flowCard} 可入库数量不足，不允许入库!");
+                                    return new ApiResult(-1, $"{item.flowCard} 可入库数量不足，不允许入库! {item.MoDId}");
                                 }
 
                                 #region 处理现存量
@@ -553,6 +554,14 @@ namespace ZR.Service
                             if (item.Value > decimal.Parse(dsmo.Tables[0].Rows[0]["iQuantity"].ToString()))
                             {
                                 return new ApiResult(-1, "生产订单号[" + dsmo.Tables[0].Rows[0]["MoCode"].ToString() + "]行号[" + dsmo.Tables[0].Rows[0]["SortSeq"].ToString() + "]不允许超量入库!");
+                            }
+                            else
+                            {
+                                string counts = U8db.Ado.GetString("select count(1) from mom_orderdetail a (nolock) inner join mom_moallocate b (nolock) on a.MoDId = b.MoDId where a.MoDId = '" + item.Key + "' and b.IssQty<>b.Qty and (isnull(a.QualifiedInQty, 0) +" + item.Value + ") * (BaseQtyN / BaseQtyD) > b.IssQty + 0.02");
+                                if (int.Parse(counts) > 0)
+                                {
+                                    return new ApiResult(-1, "生产订单号[" + dsmo.Tables[0].Rows[0]["MoCode"].ToString() + "]行号[" + dsmo.Tables[0].Rows[0]["SortSeq"].ToString() + "]领用材料不足!");
+                                }
                             }
                         }
                         else

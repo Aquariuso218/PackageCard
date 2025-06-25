@@ -13,6 +13,7 @@ using JinianNet.JNTemplate.Nodes;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Cors;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
+using ZR.Model.Sunset.Model;
 
 namespace ZR.Admin.WebApi.Controllers.Business
 {
@@ -33,6 +34,48 @@ namespace ZR.Admin.WebApi.Controllers.Business
             PackagingLabelService = packingLabelService;
             Rdrecord10Service = rdrecord10Service;
             Rdrecord32Service = rdrecord32Service;
+        }
+
+        /// <summary>
+        /// 删除装箱主表
+        /// </summary>
+        /// <param name="boxNumber"></param>
+        /// <returns></returns>
+        [HttpDelete("DeletePC/{boxNumber}")]
+        //[Log(Title = "装箱管理", BusinessType = BusinessType.DELETE)]
+        //[ActionPermissionFilter(Permission = "system:user:remove")]
+        public IActionResult DeletePackageCard(string boxNumber = "")
+        {
+            if (boxNumber == "") { return ToResponse(ApiResult.Error(101, "请求参数错误")); };
+            MyApiResult result = PackagingLabelService.DeletePackageCard(boxNumber);
+
+            if (result.Code != 1)
+            {
+                return ToResponse(ResultCode.FAIL, result.Msg);
+            }
+
+            return ToResponse(ApiResult.Success(result.Msg));
+        }
+
+        /// <summary>
+        /// 删除装箱子表明细
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("DeletePCD/{id}")]
+        [Log(Title = "装箱管理", BusinessType = BusinessType.DELETE)]
+        //[ActionPermissionFilter(Permission = "system:user:remove")]
+        public IActionResult DeletePCDetails(int id = 0)
+        {
+            if (id <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+
+            MyApiResult result = PackagingLabelService.DeletePCDetails(id);
+            if (result.Code != 1)
+            {
+                return ToResponse(ResultCode.FAIL, result.Msg);
+            }
+
+            return ToResponse(ApiResult.Success(result.Msg));
         }
 
         /// <summary>
@@ -171,6 +214,18 @@ namespace ZR.Admin.WebApi.Controllers.Business
         public IActionResult salesInvoice([FromBody] DispatchList dispatchList)
         {
             return ToResponse(Rdrecord32Service.stockOut(dispatchList));
+        }
+
+
+        /// <summary>
+        /// 修改装箱数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("update")]
+        [AllowAnonymous]
+        public IActionResult UpdatePC([FromBody] PackageCard card)
+        {
+            return ToResponse(PackagingLabelService.UpdatePC(card));
         }
 
     }

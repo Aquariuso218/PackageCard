@@ -20,8 +20,12 @@
                         <el-input v-model="queryParams.invName" placeholder="请输入产品名称" clearable style="width: 240px"
                             @keyup.enter.native="handleQuery" />
                     </el-form-item>
-                    <el-form-item label="零箱" prop="invCode">
+                    <el-form-item label="零箱" prop="isZeroBox">
                         <el-switch v-model="queryParams.isZeroBox" active-color="#45a247" inactive-color="#ff4949">
+                        </el-switch>
+                    </el-form-item>
+                    <el-form-item label="未入库" prop="isNoInStock">
+                        <el-switch v-model="queryParams.isNoInStock" active-color="#45a247" inactive-color="#ff4949">
                         </el-switch>
                     </el-form-item>
                     <el-form-item style="margin-left: 20px;">
@@ -47,12 +51,22 @@
             <el-table-column prop="pictureCode" label="图号" min-width="140"></el-table-column>
             <el-table-column prop="boxQty" label="装箱数量"></el-table-column>
             <el-table-column prop="quantity" label="已装数量"></el-table-column>
-            <el-table-column prop="customerName" label="客户名称" min-width="190"></el-table-column>
+            <el-table-column prop="customerName" label="客户名称" show-overflow-tooltip></el-table-column>
             <el-table-column prop="createdTime" label="创建时间" sortable min-width="140"></el-table-column>
             <el-table-column prop="createBy" label="装箱人"></el-table-column>
             <el-table-column prop="isClosePacking" label="封箱">
                 <template #default="scope">
-                    {{ scope.row.isClosePacking === 1 ? '是' : '否' }}
+                    <el-tag :type="scope.row.isClosePacking === 1 ? 'success' : 'info'" effect="dark">
+                        {{ scope.row.isClosePacking === 1 ? '已封箱' : '未封箱' }}
+                    </el-tag>
+
+                </template>
+            </el-table-column>
+            <el-table-column prop="isChange" label="形态转换">
+                <template #default="scope">
+                    <el-tag :type="scope.row.isChange === 1 ? 'success' : 'info'" effect="dark">
+                        {{ scope.row.isChange === 1 ? '是' : '否' }}
+                    </el-tag>
                 </template>
             </el-table-column>
             <el-table-column prop="modifiedBy" label="修改人"></el-table-column>
@@ -61,10 +75,12 @@
                     {{ scope.row.modifiedTime === '0001-01-01 00:00:00' ? '' : scope.row.modifiedTime }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" align="center" fixed="right" min-width="200">
+            <el-table-column label="操作" align="center" fixed="right" min-width="280">
                 <template slot-scope="scope">
                     <el-button size="medium" @click="preview(scope.row)">预览</el-button>
                     <el-button size="medium" type="primary" @click="handledetails(scope.row)">详情</el-button>
+                    <el-button size="medium" type="danger" @click="delPC(scope.row)"
+                        :loading="btnLoading">拆箱</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -72,7 +88,7 @@
         <pagination v-show="total > 0" :page-sizes="[20, 50, 100, 500, 1000]" :total="total"
             :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
         <!-- 查看明细 -->
-        <el-drawer title="详情" size="70%" :visible.sync="drawer">
+        <el-drawer title="详情" size="85%" :visible.sync="drawer">
             <div>
                 <el-table v-loading="_loading" :data="details" stripe>
                     <el-table-column type="index" label="序号"></el-table-column>
@@ -82,14 +98,30 @@
                     <el-table-column prop="invName" label="产品名称" min-width="180"></el-table-column>
                     <el-table-column prop="quantity" label="数量"></el-table-column>
                     <el-table-column prop="createdTime" label="装箱时间" min-width="140"></el-table-column>
+                    <el-table-column prop="isChange" label="形态转换">
+                        <template #default="scope">
+                            <el-switch v-model="scope.row.isChange" active-color="#13ce66" inactive-color="#ff4949"
+                                :active-value="1" :inactive-value="0"
+                                @change="handleSwitchChange(scope.row)"></el-switch>
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="isFlag" label="是否入库">
                         <template #default="scope">
-                            {{ scope.row.isFlag === 1 ? '已入库' : '未入库' }}
+                            <el-tag :type="scope.row.isFlag === 1 ? 'success' : 'info'" effect="dark">
+                                {{ scope.row.isFlag === 1 ? '已入库' : '未入库' }}
+                            </el-tag>
+
                         </template>
                     </el-table-column>
                     <el-table-column prop="rdCode" label="入库单号" min-width="130"></el-table-column>
                     <el-table-column prop="rdTime" label="入库时间" min-width="140"></el-table-column>
                     <el-table-column prop="rdMaker" label="入库操作人"></el-table-column>
+                    <el-table-column label="操作" align="center" fixed="right" min-width="100">
+                        <template slot-scope="scope">
+                            <el-button size="medium" type="danger" :loading="btnLoading"
+                                @click="delPCD(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
                 </el-table>
                 <el-table v-loading="_loading" :data="tableData" empty-text="暂无数据" />
             </div>
@@ -147,13 +179,15 @@
 </template>
 
 <script>
-import { packingList } from "@/api/business/packing"
+import { packingList, update, delBox, delBoxs } from "@/api/business/packing"
 import QRCode from "qrcode"
 
 export default {
     name: 'post',
     data() {
         return {
+
+            btnLoading: false,
             isPrint: false,
 
             // 遮罩层
@@ -170,7 +204,8 @@ export default {
                 boxNumber: '',
                 invCode: '',
                 invName: '',
-                isZeroBox: false
+                isZeroBox: false,
+                isNoInStock: false
             },
             // 日期范围
             dateRange: [],
@@ -194,9 +229,93 @@ export default {
         this.getList();
     },
     methods: {
+        async delPC(row) {
+            await this.$confirm('您正在永久删除该木箱, 是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                delBox(row.boxNumber).then(res => {
+                    if (res.code = 200) {
+                        this.msgSuccess(res.msg);
+                        this.getList();
+                    } else {
+                        this.msgWarning(res.msg);
+                    }
+                })
+            }).catch(() => {
+                // this.$message({
+                //     type: 'info',
+                //     message: '已取消删除'
+                // });
+            });
+        },
+        async delPCD(row) {
+            if (row.isFlag == 1) {
+                this.msgWarning("产品已入库,不允许删除!");
+                return;
+            }
+
+            await this.$confirm('您正在从箱子中删除该产品, 是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                delBoxs(row.id).then(res => {
+                    if (res.code = 200) {
+                        this.msgSuccess(res.msg);
+
+                        this.details = this.details.filter(item => item.id !== row.id);
+                        // 2. 从tableData中对应的boxNumber的details数组中删除
+                        this.tableData = this.tableData.map(box => {
+                            if (box.boxNumber === row.boxNumber) {
+                                // 过滤掉要删除的detail项
+                                box.details = box.details.filter(detail => detail.id !== row.id);
+
+                                // 3. 如果details为空，返回null以便后续过滤
+                                if (box.details.length === 0) {
+                                    return null;
+                                }
+                            }
+                            return box;
+                        }).filter(Boolean);  // 过滤掉为null的项（即空details的box）
+                        this.getList();
+                    } else {
+                        this.msgWarning(res.msg);
+                    }
+                })
+            }).catch(() => {
+                // this.$message({
+                //     type: 'info',
+                //     message: '已取消删除'
+                // });
+            });
+        },
+
+        async handleSwitchChange(row) {
+            await update({
+                boxNumber: row.boxNumber,
+                isChange: row.isChange,
+                Details: [
+                    {
+                        id: row.id
+                    }
+                ]
+            }).then(res => {
+                if (res.msg == "success") {
+                    this.msgSuccess("状态修改成功");
+                    this.getList();
+                }
+                else {
+                    this.msgError("状态修改失败");
+                }
+            });
+        },
+
+        //产品全部出库时行的背景色
         tableRowClassName({ row, rowIndex }) {
             if (rowIndex == 1) {
-                console.log(row)
+                // console.log(row)
             }
 
             var stockNum = 0;
@@ -213,7 +332,6 @@ export default {
                 return '';
             }
         },
-
         // 处理勾选变化
         handleSelectionChange(val) {
             this.selectedRows = val; // 更新勾选的数据
@@ -313,13 +431,11 @@ export default {
             // 将所有标识卡内容拼接并打印（每个标识卡后添加分页）
             this.printBatch(printContents.join('<div style="page-break-after: always;"></div>'));
         },
-
         // 单个打印方法（复用逻辑）
         printLabel() {
             const printContent = document.querySelector('.label-content').outerHTML;
             this.printBatch(printContent);
         },
-
         // 通用的批量打印方法
         printBatch(content) {
             const iframe = document.createElement('iframe');
@@ -419,7 +535,6 @@ export default {
                 }, 1000);
             }, 500); // 延迟 500ms 确保内容渲染完成
         },
-
         //打印预览
         preview(row) {
             this.labelData.id = row.id;
@@ -452,6 +567,7 @@ export default {
             try {
                 await packingList(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
                     this.tableData = response.data.result
+                    console.log(JSON.stringify(this.tableData));
                     this.total = response.data.totalNum
                     this._loading = false
 
@@ -480,6 +596,7 @@ export default {
             this.queryParams.invCode = '';
             this.queryParams.invName = '';
             this.queryParams.isZeroBox = false;
+            this.queryParams.isNoInStock = false;
         }
 
 

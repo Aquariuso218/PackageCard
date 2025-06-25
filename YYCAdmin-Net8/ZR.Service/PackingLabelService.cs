@@ -7,6 +7,9 @@ using ZR.Model.Sunset.Model.Dto;
 using ZR.Model.Sunset.Model;
 using System.Data;
 using Microsoft.Extensions.Configuration;
+using Infrastructure.Model;
+using Infrastructure;
+using ZR.Model.Sunset;
 
 namespace ZR.Service
 {
@@ -17,6 +20,7 @@ namespace ZR.Service
         private readonly ISqlSugarClient db;
         private readonly ISqlSugarClient U8db;
         private readonly IConfiguration config;
+        private readonly NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         public PackingLabelService()
         {
@@ -29,6 +33,204 @@ namespace ZR.Service
             db = DbScoped.SugarScope.GetConnectionScope(0);
             U8db = DbScoped.SugarScope.GetConnectionScope(1);
         }
+
+        /// <summary>
+        /// 删除整箱
+        /// </summary>
+        /// <param name="boxNumber"></param>
+        /// <returns></returns>
+        public MyApiResult DeletePackageCard(string boxNumber)
+        {
+            // 检查箱内是否有已入库的产品（isFlag == 1）
+            bool hasStockedProducts = db.Queryable<PackageCardDetails>()
+                                      .Any(pc => pc.boxNumber == boxNumber && pc.isFlag == 1);
+
+            // 如果有已入库产品，不允许删除
+            if (hasStockedProducts)
+            {
+
+                return new MyApiResult
+                {
+                    Code = 0,
+                    Msg = "箱子存在已出库产品不允许删除!"
+                };
+            }
+
+            try
+            {
+                // 开启事务，确保数据一致性
+                db.Ado.BeginTran();
+
+                // 先删除子表（PackageCardDetails）
+                db.Deleteable<PackageCardDetails>()
+                  .Where(pc => pc.boxNumber == boxNumber)
+                  .ExecuteCommand();
+
+                // 再删除主表（PackageCard）
+                db.Deleteable<PackageCard>()
+                  .Where(pc => pc.boxNumber == boxNumber)
+                  .ExecuteCommand();
+
+                // 提交事务
+                db.Ado.CommitTran();
+                return new MyApiResult
+                {
+                    Code = 1,
+                    Msg = "删除成功!"
+                };
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
+                logger.Info($"删除子表数据异常: {ex.Message}");
+                return new MyApiResult
+                {
+                    Code = -1,
+                    Msg = $"数据删除失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 删除单个产品
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public MyApiResult DeletePCDetails(int id)
+        {
+            try
+            {
+                // 1. 先获取要删除的明细记录（用于后续操作）
+                var detail = db.Queryable<PackageCardDetails>()
+                              .Where(pcd => pcd.id == id)
+                              .First();
+                if (detail == null)
+                {
+                    return new MyApiResult{ 
+                        Code= 0,
+                        Msg = "未找到对应的明细记录"
+                    };
+                }
+
+                // 2. 获取关联的主表实体
+                var mainCard = db.Queryable<PackageCard>()
+                               .Where(pc => pc.boxNumber == detail.boxNumber)
+                               .First();
+                if (mainCard == null)
+                {
+                    return new MyApiResult
+                    {
+                        Code = 0,
+                        Msg = "未找到对应的主表记录"
+                    };
+                }
+
+                // 3. 执行删除明细操作
+                int affectedRows = db.Deleteable<PackageCardDetails>()
+                                   .Where(pcd => pcd.id == id)
+                                   .ExecuteCommand();
+
+                if (affectedRows <= 0)
+                {
+                    return new MyApiResult
+                    {
+                        Code = 0,
+                        Msg = "删除明细失败"
+                    };
+                }
+
+                // 4. 检查箱子是否还有剩余产品
+                if (mainCard.quantity - affectedRows > 0)
+                {
+                    // 4.1 更新箱子已装箱数量
+                    mainCard.quantity -= affectedRows;
+
+                    // 4.2 更新条码信息
+
+                    var barcodeParts = mainCard.barCode.Split('|');
+                    if (barcodeParts.Length >= 3)
+                    {
+                        // 获取当前产品ID列表
+                        var productIds = barcodeParts[2].Split('/').ToList();
+                        // 移除被删除的产品ID
+                        productIds.RemoveAll(x => x == detail.invID.ToString());
+                        // 重新拼接条码
+                        barcodeParts[2] = string.Join("/", productIds);
+                        mainCard.barCode = string.Join("|", barcodeParts);
+                        db.Updateable(mainCard).ExecuteCommand();
+                    }
+
+                    return new MyApiResult
+                    {
+                        Code = 1,
+                        Msg = "删除成功"
+                    };
+                }
+                else
+                {
+                    // 5. 没有剩余产品，删除主表记录
+                    db.Deleteable<PackageCard>()
+                      .Where(pc => pc.boxNumber == mainCard.boxNumber)
+                      .ExecuteCommand();
+
+                    return new MyApiResult
+                    {
+                        Code = 1,
+                        Msg = "删除成功，箱子已被永久删除"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                // 记录日志
+                logger.Error($"删除包装卡明细失败：{ex.Message}", ex);
+                return new MyApiResult
+                {
+                    Code = 0,
+                    Msg = $"删除操作失败：{ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// 更新 PackageCard 主表及明细表
+        /// </summary>
+        /// <param name="card">要更新的卡片对象</param>
+        /// <returns>操作结果消息</returns>
+        public int UpdatePC(PackageCard card)
+        {
+            try
+            {
+                db.Ado.UseTran(() =>
+                {
+                    // 1. 同步更新明细表 PackageCardDetails
+                    db.Updateable<PackageCardDetails>()
+                        .SetColumns(it => it.isChange == card.isChange)
+                        .Where(it => it.boxNumber == card.boxNumber && it.id == card.Details.First().id)
+                        .ExecuteCommand();
+
+                    // 2. 查询是否有符合条件的记录
+                    bool hasChanged = db.Queryable<PackageCardDetails>()
+                        .Where(it => it.boxNumber == card.boxNumber && it.isChange == 1)
+                        .Any();
+
+                    // 3. 更新主表 PackageCard
+                    db.Updateable<PackageCard>()
+                        .SetColumns(it => it.isChange == (hasChanged ? 1 : 0))
+                        .Where(it => it.boxNumber == card.boxNumber)
+                        .ExecuteCommand();
+                });
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                // 记录日志
+                logger.Info($"更新失败: {ex.Message}");
+
+                return 0;
+            }
+        }
+
 
         /// <summary>
         /// 产品列表
@@ -92,6 +294,16 @@ namespace ZR.Service
                 var query = db.Queryable<PackageCard>()
                     .Where(exp.ToExpression())
                     .OrderByDescending(d => d.Id);
+
+                // 筛选项：箱子产品是否全部入库
+                if (package.isNoInStock)
+                {
+                    // 未全部入库：检查存在 isflag != 1 的记录
+                    query = query.Where(pc =>
+                        SqlFunc.Subqueryable<PackageCardDetails>()
+                            .Where(d => d.boxNumber == pc.boxNumber && d.isFlag == 0)
+                            .Any());
+                }
 
                 // 获取分页数据
                 var packageCards = query.ToPage(pager);
@@ -421,7 +633,8 @@ namespace ZR.Service
 
                     if (lastUnfilledCard.Any())
                     {
-                        foreach (var card in lastUnfilledCard) {
+                        foreach (var card in lastUnfilledCard)
+                        {
                             currentBoxNumber = card.boxNumber;
 
                             // 如果全部已发货，此箱子不再处理
@@ -492,7 +705,8 @@ namespace ZR.Service
 
                             if (mergeUnfilledCard.Any())
                             {
-                                foreach (var card in mergeUnfilledCard) {
+                                foreach (var card in mergeUnfilledCard)
+                                {
                                     currentBoxNumber = card.boxNumber;
 
                                     // 如果全部已发货，此箱子不再处理
@@ -547,7 +761,7 @@ namespace ZR.Service
                                         .ExecuteCommand();
 
                                     remainingQuantity -= fillQuantity;
-                                }  
+                                }
                             }
                         }
                     }
@@ -1016,6 +1230,7 @@ namespace ZR.Service
 
             return noShippedCount == 0;
         }
+
 
     }
 }

@@ -90,6 +90,11 @@ namespace ZR.Model.Business.Model
        /// </summary>
         public int isClosePacking { get; set; }
 
+       /// <summary>
+       /// 形态转换标识
+       /// </summary>
+        public int isChange { get; set; }
+
         /// <summary>
         /// 备注
         /// </summary>
@@ -98,6 +103,10 @@ namespace ZR.Model.Business.Model
 
 
         #region 表额外字段
+
+        [SugarColumn(IsIgnore = true)]
+        public Boolean isNoInStock { get; set; }
+
         [SugarColumn(IsIgnore = true)] //映射时忽略
         public Boolean isZeroBox { get; set; }
 
